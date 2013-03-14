@@ -1080,20 +1080,20 @@ bool Driver::WriteMsg
 	{
 		if( node != NULL && !node->IsNodeAlive() )
 		{
-			Log::Write( LogLevel_Error, nodeId, "ERROR: Dropping command because node is presumed dead" );
+			Log::Write( LogLevel_Error, nodeId, "Node is dead. We send the message without waiting for the respose." );
 		}
 		else
 		{
 			// That's it - already tried to send GetMaxSendAttempt() times.
 			Log::Write( LogLevel_Error, nodeId, "ERROR: Dropping command, expected response not received after %d attempt(s)", m_currentMsg->GetMaxSendAttempts() );
+			RemoveCurrentMsg();
+			m_dropped++;
+			if( node != NULL )
+			{
+		    		ReleaseNodes();
+			}
+			return false;
 		}
-		RemoveCurrentMsg();
-		m_dropped++;
-		if( node != NULL )
-		{
-		    	ReleaseNodes();
-		}
-		return false;
 	}
 
 	if( attempts != 0)
@@ -1104,6 +1104,15 @@ bool Driver::WriteMsg
 
 	m_currentMsg->SetSendAttempts( ++attempts );
 	m_expectedCallbackId = m_currentMsg->GetCallbackId();
+	if( node != NULL && !node->IsNodeAlive() ) {
+		m_expectedCommandClassId = 0;
+		m_expectedNodeId = 0;
+		m_expectedReply = 0;
+	} else {
+		m_expectedCommandClassId = m_currentMsg->GetExpectedCommandClassId();
+		m_expectedNodeId = m_currentMsg->GetTargetNodeId();
+		m_expectedReply = m_currentMsg->GetExpectedReply();
+	}
 	m_expectedCommandClassId = m_currentMsg->GetExpectedCommandClassId();
 	m_expectedNodeId = m_currentMsg->GetTargetNodeId();
 	m_expectedReply = m_currentMsg->GetExpectedReply();
