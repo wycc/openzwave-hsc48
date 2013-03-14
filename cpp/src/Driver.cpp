@@ -3514,6 +3514,8 @@ bool Driver::HandleApplicationUpdateRequest
 			if( Node* node = GetNodeUnsafe( nodeId ) )
 			{
 				node->UpdateNodeInfo( &_data[8], _data[4] - 3 );
+				// Make the device alive when we receive node info from it
+				node->SetNodeAlive(true);
 			}
 			break;
 		}
