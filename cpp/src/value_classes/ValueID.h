@@ -229,6 +229,8 @@ namespace OpenZWave
 				 | ((uint32)_type);
 			m_id1 = (((uint32)_instance)<<24);
 		}
+		// Default constructor
+		ValueID():m_id(0),m_id1(0),m_homeId(0){}
 
 	private:
 		// Construct a value id for use in notifications
@@ -240,8 +242,6 @@ namespace OpenZWave
 				m_id1 = (((uint32)_instance)<<24);
 			}
 
-		// Default constructor
-		ValueID():m_id(0),m_id1(0),m_homeId(0){}
 
 		// Not all parts of the ValueID are necessary to uniquely identify the value.  In the case of a 
 		// Node's ValueStore, we can ignore the home ID, node ID, genre and type and still be left with
@@ -288,3 +288,4 @@ namespace OpenZWave
 } // namespace OpenZWave
 
 #endif
+
