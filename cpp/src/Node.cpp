@@ -2496,7 +2496,8 @@ bool Node::SetDeviceClasses
 	// Apply any COMMAND_CLASS_BASIC remapping
 	if( Basic* cc = static_cast<Basic*>( GetCommandClass( Basic::StaticGetCommandClassId() ) ) )
 	{
-		cc->SetMapping( basicMapping );
+		// FIXME: Disable this since the universal controller requirement for the controller. We should add an option to disable it in the configuration file
+		//cc->SetMapping( basicMapping );
 	}
 
 	// Write the mandatory command classes to the log
