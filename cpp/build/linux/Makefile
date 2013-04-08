@@ -28,7 +28,7 @@ LIBDIR	:= ../../lib/linux
 
 INCLUDES	:= -I ../../src -I ../../src/command_classes/ -I ../../src/value_classes/ \
 	-I ../../src/platform/ -I ../../src/platform/unix -I ../../tinyxml/ -I ../../hidapi/hidapi/
-SOURCES		:= ../../src ../../src/command_classes ../../tinyxml ../../hidapi/linux \
+SOURCES		:= ../../src ../../src/command_classes ../../tinyxml \
 	../../src/value_classes ../../src/platform ../../src/platform/unix
 
 VPATH = ../../src:../../src/command_classes:../../tinyxml:../../hidapi/linux:\
@@ -73,7 +73,6 @@ xmltest:	$(XMLLINT)
 endif
 
 -include $(tinyxml:.cpp=.d)
--include $(hidapi:.c=.d)
 -include $(cclasses:.cpp=.d)
 -include $(vclasses:.cpp=.d)
 -include $(pform:.cpp=.d)
@@ -85,7 +84,6 @@ vers.c:	verscheck
 vers.o:	vers.c
 
 $(LIBDIR)/libopenzwave.a:	$(patsubst %.cpp,%.o,$(tinyxml)) \
-			$(patsubst %.c,%.o,$(hidapi)) \
 			$(patsubst %.cpp,%.o,$(cclasses)) \
 			$(patsubst %.cpp,%.o,$(vclasses)) \
 			$(patsubst %.cpp,%.o,$(pform)) \
@@ -93,7 +91,6 @@ $(LIBDIR)/libopenzwave.a:	$(patsubst %.cpp,%.o,$(tinyxml)) \
 	$(AR) $@ $?
 
 $(LIBDIR)/libopenzwave.so:	$(patsubst %.cpp,%.o,$(tinyxml)) \
-			$(patsubst %.c,%.o,$(hidapi)) \
 			$(patsubst %.cpp,%.o,$(cclasses)) \
 			$(patsubst %.cpp,%.o,$(vclasses)) \
 			$(patsubst %.cpp,%.o,$(pform)) \

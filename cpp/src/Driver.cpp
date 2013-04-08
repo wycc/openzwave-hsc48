@@ -200,7 +200,7 @@ Driver::Driver
 
 	if( ControllerInterface_Hid == _interface )
 	{
-		m_controller = new HidController();
+		//m_controller = new HidController();
 	}
 	else
 	{
@@ -473,7 +473,7 @@ bool Driver::Init
 	uint32 _attempts
 )
 {
-	m_nodeId = -1;
+	m_nodeId = (uint8)-1;
 	m_waitingForAck = false;
 
 	// Open the controller
