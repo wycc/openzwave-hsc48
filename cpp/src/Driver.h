@@ -328,6 +328,8 @@ namespace OpenZWave
 		void HandleSendSlaveNodeInfoRequest( uint8* _data );
 		void HandleApplicationSlaveCommandRequest( uint8* _data );
 		void HandleSerialAPIResetRequest( uint8* _data );
+		void ManufacturerSpecificHandle(uint8 node);
+		void VersionDataHandle(uint8 node, uint8 classId, uint8 commandId, uint8 data);
 
 		void CommonAddNodeStatusRequestHandler( uint8 _funcId, uint8* _data );
 

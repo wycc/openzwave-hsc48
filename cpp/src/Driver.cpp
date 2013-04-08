@@ -2232,8 +2232,12 @@ void Driver::HandleGetSerialAPICapabilitiesResponse
 	Msg* msg = new Msg( "FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION", 0xff, REQUEST, FUNC_ID_SERIAL_API_APPL_NODE_INFORMATION, false, false );
 	msg->Append( APPLICATION_NODEINFO_LISTENING );
 	msg->Append( 0x02 );			// Generic Static Controller
-	msg->Append( 0x01 );			// Specific Static PC Controller
-	msg->Append( 0x01 );
+	msg->Append( 0x07 );			// Specific Static PC Controller
+	msg->Append( 0x04 );            // 4 command classes
+	msg->Append( Basic::StaticGetCommandClassId() );  
+	msg->Append( Version::StaticGetCommandClassId() );  
+	msg->Append( ManufacturerSpecific::StaticGetCommandClassId() );  
+	msg->Append( Security::StaticGetCommandClassId() );  
 	SendMsg( msg, MsgQueue_Command );
 }
 
@@ -3200,7 +3204,61 @@ void Driver::HandleReplaceFailedNodeRequest
 
 	UpdateControllerState( state );
 }
+void Driver::VersionDataHandler(uint8 node, uint8 commandId, uint8 data)
+{
+	if (commandId == 0x11) {
+		// retur the library version report
+		Msg* msg = new Msg( "VersionCmd_Report", node, RESPONSE, FUNC_ID_ZW_SEND_DATA, true);
+		msg->Append(node);
+		msg->Append(Version::StaticGetCommandClassId());
+		msg->Append(0x12);
+		msg->Append(m_libraryType);
+		// ZDK-6.02
+		msg->Append(3);
+		msg->Append(41);
+		// Application 1.0
+		msg->Append(1);
+		msg->Append(0);
+		SendMsg(msg);
 
+	} else if (commandId == 0x13) {
+		uint8 v;
+
+		if (data == Basic::StaticGetCommandClassId()) {
+			v = 1;
+		} else if (data == Version::StaticGetCommandClassId()) {
+			v = 1;
+		} else if (data == Security::StaticGetCommandClassId()) {
+			v = 1;
+		} else if (data == ManufacturerSpecific::StaticGetCommandClassId()) {
+			v = 1;
+		}
+		Msg* msg = new Msg( "VersionCmd_ClassReport", node, RESPONSE, FUNC_ID_ZW_SEND_DATA, true);
+		msg->Append(node);
+		msg->Append(Version::StaticGetCommandClassId());
+		msg->Append(0x14);
+		msg->Append(v);
+		msg->Append(GetTransmitOptions() );
+
+		SendMgs(msg);
+	}
+}
+
+void Driver::ManufacturerSpecificHandle(uint8 node)
+{
+	 Msg* msg = new Msg( "ManufacturerSpecificCmd_Report", node, RESPONSE, FUNC_ID_ZW_SEND_DATA, true);
+	 msg->Append(node);
+	 msg->Append(ManufacturerSpecific::StaticGetCommandClassId());
+	 msg->Append(0x5);
+	 msg->Append(01);
+	 msg->Append(0x62);
+	 msg->Append(0);
+	 msg->APpend(1);
+	 msg->Append(0);
+	 msg->Append(0x48);
+	 msg->Append(GetTransmitOptions() );
+	 SendMsg(msg);
+}
 //-----------------------------------------------------------------------------
 // <Driver::HandleApplicationCommandHandlerRequest>
 // Process a request from the Z-Wave PC interface
@@ -3213,6 +3271,7 @@ void Driver::HandleApplicationCommandHandlerRequest
 	uint8 status = _data[2];
 	uint8 nodeId = _data[3];
 	uint8 classId = _data[5];
+	uint8 commandId = _data[6];
 	Node* node = GetNodeUnsafe( nodeId );
 
 	if( ( status & RECEIVE_STATUS_ROUTED_BUSY ) != 0 )
@@ -3261,6 +3320,23 @@ void Driver::HandleApplicationCommandHandlerRequest
 			node->m_receivedUnsolicited++;
 		}
 	}
+	if (Basic::StaticGetCommandClassId() == classId) {
+	}
+
+	if (Version::StaticCommandClassId() == classId) {
+		if (commandId == 0x11 || commandId == 0x13) {
+			VersionDataHandler(comamndId, _data[7]);
+			return;
+		}
+	}
+	if (ManufacturerSpecific::StaticCommandClassId() == classId) {
+		if (commandId == 0x4) {
+			// Get
+			ManufacturerSpecificHandle();
+			return;
+		}
+	}
+
 	if( ApplicationStatus::StaticGetCommandClassId() == classId )
 	{
 		//TODO: Test this class function or implement
