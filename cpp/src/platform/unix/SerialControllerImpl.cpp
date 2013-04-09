@@ -59,7 +59,9 @@ SerialControllerImpl::~SerialControllerImpl
 (
 )
 {
+	Log::Write(LogLevel_Info,"Release driver; wait lock");
 	flock(m_hSerialController, LOCK_UN);
+	Log::Write(LogLevel_Info,"Release driver; release");
 	if(m_hSerialController >= 0)
 		close( m_hSerialController );
 }
@@ -97,7 +99,9 @@ void SerialControllerImpl::Close
 {
 	if( m_pThread )
 	{
+		Log::Write(LogLevel_Info,"Stop");
 		m_pThread->Stop();
+		Log::Write(LogLevel_Info,"release");
 		m_pThread->Release();
 		m_pThread = NULL;
 	}
@@ -140,7 +144,7 @@ void SerialControllerImpl::ReadThreadProc
 		{
 			// Enter read loop.  Call will only return if
 			// an exit is requested or an error occurs
-			Read();
+			if (Read(_exitEvent)) return;
 
 			// Reset the attempts, so we get a rapid retry for temporary errors
 			attempts = 0;
@@ -288,6 +292,7 @@ bool SerialControllerImpl::Init
 	}
 
 	tcflush( m_hSerialController, TCIOFLUSH );
+	fcntl(m_hSerialController,F_SETFL, O_NONBLOCK);
 
 	// Open successful
  	Log::Write( LogLevel_Info, "Serial port %s opened (attempt %d)", device.c_str(), _attempts );
@@ -307,8 +312,9 @@ SerialOpenFailure:
 // <SerialControllerImpl::Read>
 // Read data from the serial port
 //-----------------------------------------------------------------------------
-void SerialControllerImpl::Read
+bool SerialControllerImpl::Read
 (
+ 	Event *_exitEvent
 )
 {
 	uint8 buffer[256];
@@ -330,18 +336,28 @@ void SerialControllerImpl::Read
 			struct timeval *whenp;
 			fd_set rds, eds;
 			int oldstate;
+			struct timeval to;
 
 			FD_ZERO( &rds );
 			FD_SET( m_hSerialController, &rds );
 			FD_ZERO( &eds );
 			FD_SET( m_hSerialController, &eds );
-			whenp = NULL;
+			to.tv_sec = 5;
+			to.tv_usec = 0;
+			whenp = &to;
+
 
 			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
 			err = select( m_hSerialController + 1, &rds, NULL, &eds, whenp );
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
+			Log::Write(LogLevel_Info,"Timeout");
+			if( Wait::Single( _exitEvent, 30 ) >= 0 )
+			{
+				return true;
+			}
 		} while( err <= 0 );
 	}
+	return false;
 }
 
 //-----------------------------------------------------------------------------

@@ -290,7 +290,9 @@ bool Manager::RemoveDriver
 	{
 		if( _controllerPath == rit->second->GetControllerPath() )
 		{
+			Log::Write( LogLevel_Info, "Delete underline driver");
 			delete rit->second;
+			Log::Write( LogLevel_Info, "Try to remove driver");
 			m_readyDrivers.erase( rit );
 			Log::Write( LogLevel_Info, "mgr,     Driver for controller %s removed", _controllerPath.c_str() );
 			return true;
@@ -3100,15 +3102,22 @@ void Manager::ResetController
 	{
 		Event *event = new Event();
 		driver->ResetController( event );
+		Log::Write(LogLevel_Info,"Wait Driver to be erased");
 		Wait::Single( event );
+		Log::Write(LogLevel_Info,"Erase is done");
 		event->Release();
 		string path = driver->GetControllerPath();
 		Driver::ControllerInterface intf = driver->GetControllerInterfaceType();
+		Log::Write(LogLevel_Info,"Remove driver");
 		RemoveDriver( path );
+		Log::Write(LogLevel_Info,"Add driver");
 		AddDriver( path, intf );
+		Log::Write(LogLevel_Info,"Driver is added");
 		Wait::Multiple( NULL, 0, 500 );
+		Log::Write(LogLevel_Info,"Finished");
 	}
 	RemoveAllScenes( _homeId );
+	Log::Write(LogLevel_Info,"Scene is erased");
 }
 
 //-----------------------------------------------------------------------------

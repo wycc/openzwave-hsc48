@@ -29,6 +29,7 @@
 #include "Event.h"
 #include "Thread.h"
 #include "ThreadImpl.h"	// Platform-specific implementation of a thread
+#include "Log.h"
 
 using namespace OpenZWave;
 
@@ -80,12 +81,15 @@ bool Thread::Stop
 )
 {
 	int32 timeout = 2000;	// Give the thread 2 seconds to exit
+	Log::Write(LogLevel_Info,"prepare to stop");
 	m_exitEvent->Set();
 	
 	if( Wait::Single( this, timeout ) < 0 )
 	{
 		// Timed out
+		Log::Write(LogLevel_Info,"Timeout, prepare to terminate");
 	        m_pImpl->Terminate();
+		Log::Write(LogLevel_Info,"Timeout, prepare to terminate done");
 		return false;
 	}
 

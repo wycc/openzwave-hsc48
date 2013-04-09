@@ -59,7 +59,7 @@ namespace OpenZWave
 		uint32 Write( uint8* _buffer, uint32 _length );
 
 		bool Init( uint32 const _attempts );
-		void Read();
+		bool Read(Event *);
 
 		SerialController*	m_owner;
 		int			m_hSerialController;
