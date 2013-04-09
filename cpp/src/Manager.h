@@ -322,6 +322,12 @@ namespace OpenZWave
 		 * \param _homeId The Home ID of the Z-Wave controller.
 		 */
 		string GetControllerPath( uint32 const _homeId );
+		/**
+		 * \brief Get the endpoint of the value object
+		 * \param _homeId The Home ID of the Z-Wave controller.
+		 * \param v The ValueID of the Value object
+		 */
+		int GetEndPoint(uint32 const _homeId,OpenZWave::ValueID* v);
 	/*@}*/
 
 	private:

@@ -3997,3 +3997,34 @@ void Manager::GetNodeStatistics
 	}
 
 }
+
+int Manager::GetEndPoint
+(
+	uint32 const _homeId,
+ 	ValueID *id
+)
+{
+	int endpoint = 0;
+	if( Driver* driver = GetDriver( _homeId ) )
+	{
+	        Node *node;
+
+	        // Need to lock and unlock nodes to check this information
+	        driver->LockNodes();
+
+	        if( ( node = driver->GetNodeUnsafe( id->GetNodeId() ) ) != NULL ) 
+		{
+			int instance = id->GetInstance();
+			int classId = id->GetCommandClassId();
+			CommandClass *cc;
+			if ( node->NodeInfoReceived() && ( ( cc = node->GetCommandClass( classId ) ) != NULL ) ) {
+				endpoint = cc->GetEndPoint(instance);
+			}
+
+		}
+		driver->ReleaseNodes();            
+	}
+	return endpoint;
+}
+
+
