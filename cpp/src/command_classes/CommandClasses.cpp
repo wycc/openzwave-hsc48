@@ -34,9 +34,9 @@ using namespace OpenZWave;
 #include "Alarm.h"
 #include "ApplicationStatus.h"
 #include "Association.h"
-#include "AssociationCommandConfiguration.h"
+//#include "AssociationCommandConfiguration.h"
 #include "Basic.h"
-#include "BasicWindowCovering.h"
+//#include "BasicWindowCovering.h"
 #include "Battery.h"
 #include "ClimateControlSchedule.h"
 #include "Clock.h"
@@ -63,6 +63,7 @@ using namespace OpenZWave;
 #include "SensorAlarm.h"
 #include "SensorBinary.h"
 #include "SensorMultilevel.h"
+#include "SimpleAV.h"
 #include "SwitchAll.h"
 #include "SwitchBinary.h"
 #include "SwitchMultilevel.h"
@@ -169,9 +170,9 @@ void CommandClasses::RegisterCommandClasses
 	cc.Register( Alarm::StaticGetCommandClassId(), Alarm::StaticGetCommandClassName(), Alarm::Create );
 	cc.Register( ApplicationStatus::StaticGetCommandClassId(), ApplicationStatus::StaticGetCommandClassName(), ApplicationStatus::Create );
 	cc.Register( Association::StaticGetCommandClassId(), Association::StaticGetCommandClassName(), Association::Create );
-	cc.Register( AssociationCommandConfiguration::StaticGetCommandClassId(), AssociationCommandConfiguration::StaticGetCommandClassName(), AssociationCommandConfiguration::Create );
+	//cc.Register( AssociationCommandConfiguration::StaticGetCommandClassId(), AssociationCommandConfiguration::StaticGetCommandClassName(), AssociationCommandConfiguration::Create );
 	cc.Register( Basic::StaticGetCommandClassId(), Basic::StaticGetCommandClassName(), Basic::Create );
-	cc.Register( BasicWindowCovering::StaticGetCommandClassId(), BasicWindowCovering::StaticGetCommandClassName(), BasicWindowCovering::Create );
+	//cc.Register( BasicWindowCovering::StaticGetCommandClassId(), BasicWindowCovering::StaticGetCommandClassName(), BasicWindowCovering::Create );
 	cc.Register( Battery::StaticGetCommandClassId(), Battery::StaticGetCommandClassName(), Battery::Create );
 	cc.Register( ClimateControlSchedule::StaticGetCommandClassId(), ClimateControlSchedule::StaticGetCommandClassName(), ClimateControlSchedule::Create );
 	cc.Register( Clock::StaticGetCommandClassId(), Clock::StaticGetCommandClassName(), Clock::Create );
@@ -198,6 +199,7 @@ void CommandClasses::RegisterCommandClasses
 	cc.Register( SensorAlarm::StaticGetCommandClassId(), SensorAlarm::StaticGetCommandClassName(), SensorAlarm::Create );
 	cc.Register( SensorBinary::StaticGetCommandClassId(), SensorBinary::StaticGetCommandClassName(), SensorBinary::Create );
 	cc.Register( SensorMultilevel::StaticGetCommandClassId(), SensorMultilevel::StaticGetCommandClassName(), SensorMultilevel::Create );
+	cc.Register( SimpleAV::StaticGetCommandClassId(), SimpleAV::StaticGetCommandClassName(), SimpleAV::Create );
 	cc.Register( SwitchAll::StaticGetCommandClassId(), SwitchAll::StaticGetCommandClassName(), SwitchAll::Create );
 	cc.Register( SwitchBinary::StaticGetCommandClassId(), SwitchBinary::StaticGetCommandClassName(), SwitchBinary::Create );
 	cc.Register( SwitchMultilevel::StaticGetCommandClassId(), SwitchMultilevel::StaticGetCommandClassName(), SwitchMultilevel::Create );

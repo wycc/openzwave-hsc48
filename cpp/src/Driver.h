@@ -186,6 +186,8 @@ namespace OpenZWave
 		bool IsBridgeController()const{ return (m_libraryType == 7); }
 		bool IsInclusionController()const{ return ((m_controllerCaps & ControllerCaps_SIS) != 0); }
 
+		void VersionDataHandler(uint8, uint8, uint8);
+
 
 		uint32 GetHomeId()const{ return m_homeId; }
 		uint8 GetNodeId()const{ return m_nodeId; }

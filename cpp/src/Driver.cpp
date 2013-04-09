@@ -49,6 +49,8 @@
 #include "SwitchAll.h"
 #include "ManufacturerSpecific.h"
 #include "NoOperation.h"
+#include "Version.h"
+#include "Basic.h"
 
 #include "ValueID.h"
 #include "Value.h"
@@ -2237,7 +2239,8 @@ void Driver::HandleGetSerialAPICapabilitiesResponse
 	msg->Append( Basic::StaticGetCommandClassId() );  
 	msg->Append( Version::StaticGetCommandClassId() );  
 	msg->Append( ManufacturerSpecific::StaticGetCommandClassId() );  
-	msg->Append( Security::StaticGetCommandClassId() );  
+	msg->Append( 0x00 );  
+	//msg->Append( Security::StaticGetCommandClassId() );  
 	SendMsg( msg, MsgQueue_Command );
 }
 
@@ -3219,7 +3222,7 @@ void Driver::VersionDataHandler(uint8 node, uint8 commandId, uint8 data)
 		// Application 1.0
 		msg->Append(1);
 		msg->Append(0);
-		SendMsg(msg);
+		SendMsg(msg,MsgQueue_Command);
 
 	} else if (commandId == 0x13) {
 		uint8 v;
@@ -3228,8 +3231,8 @@ void Driver::VersionDataHandler(uint8 node, uint8 commandId, uint8 data)
 			v = 1;
 		} else if (data == Version::StaticGetCommandClassId()) {
 			v = 1;
-		} else if (data == Security::StaticGetCommandClassId()) {
-			v = 1;
+		//} else if (data == Security::StaticGetCommandClassId()) {
+		//	v = 1;
 		} else if (data == ManufacturerSpecific::StaticGetCommandClassId()) {
 			v = 1;
 		}
@@ -3240,7 +3243,7 @@ void Driver::VersionDataHandler(uint8 node, uint8 commandId, uint8 data)
 		msg->Append(v);
 		msg->Append(GetTransmitOptions() );
 
-		SendMgs(msg);
+		SendMsg(msg,MsgQueue_Command);
 	}
 }
 
@@ -3253,11 +3256,11 @@ void Driver::ManufacturerSpecificHandle(uint8 node)
 	 msg->Append(01);
 	 msg->Append(0x62);
 	 msg->Append(0);
-	 msg->APpend(1);
+	 msg->Append(1);
 	 msg->Append(0);
 	 msg->Append(0x48);
 	 msg->Append(GetTransmitOptions() );
-	 SendMsg(msg);
+	 SendMsg(msg,MsgQueue_Command);
 }
 //-----------------------------------------------------------------------------
 // <Driver::HandleApplicationCommandHandlerRequest>
@@ -3323,16 +3326,16 @@ void Driver::HandleApplicationCommandHandlerRequest
 	if (Basic::StaticGetCommandClassId() == classId) {
 	}
 
-	if (Version::StaticCommandClassId() == classId) {
+	if (Version::StaticGetCommandClassId() == classId) {
 		if (commandId == 0x11 || commandId == 0x13) {
-			VersionDataHandler(comamndId, _data[7]);
+			VersionDataHandler(nodeId,commandId, _data[7]);
 			return;
 		}
 	}
-	if (ManufacturerSpecific::StaticCommandClassId() == classId) {
+	if (ManufacturerSpecific::StaticGetCommandClassId() == classId) {
 		if (commandId == 0x4) {
 			// Get
-			ManufacturerSpecificHandle();
+			ManufacturerSpecificHandle(nodeId);
 			return;
 		}
 	}

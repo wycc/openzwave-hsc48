@@ -33,7 +33,7 @@
 #include "Notification.h"
 #include "Options.h"
 #include "Association.h"
-#include "AssociationCommandConfiguration.h"
+//#include "AssociationCommandConfiguration.h"
 
 using namespace OpenZWave;
 
@@ -289,6 +289,7 @@ void Group::OnGroupChanged
 	if( notify )
 	{
 		// If the node supports COMMAND_CLASS_ASSOCIATION_COMMAND_CONFIGURATION, we need to request the command data.
+#if 0		
 		if( Driver* driver = Manager::Get()->GetDriver( m_homeId ) )
 		{
 			if( Node* node = driver->GetNodeUnsafe( m_nodeId ) )
@@ -302,7 +303,7 @@ void Group::OnGroupChanged
 				}
 			}
 		}
-
+#endif
 		// Send notification that the group contents have changed
 		Notification* notification = new Notification( Notification::Type_Group );
 		notification->SetHomeAndNodeIds( m_homeId, m_nodeId );
