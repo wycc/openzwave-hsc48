@@ -45,7 +45,8 @@ enum SwitchAllCmd
 	SwitchAllCmd_On		= 0x04,
 	SwitchAllCmd_Off	= 0x05
 };
-
+#define SWITCHALL_DISABLE_CONF
+#ifndef SWITCHALL_DISABLE_CONF
 static char const* c_switchAllStateName[] = 
 {
 	"Disabled",
@@ -53,7 +54,7 @@ static char const* c_switchAllStateName[] =
 	"On Enabled",
 	"On and Off Enabled"
 };
-
+#endif
 //-----------------------------------------------------------------------------
 // <SwitchAll::RequestState>
 // Request current state from the device
@@ -65,7 +66,7 @@ bool SwitchAll::RequestState
 	Driver::MsgQueue const _queue
 )
 {
-#if 0
+#ifndef SWITCHALL_DISABLE_CONF
 	// We don't need this information. Disable it here.
 	if( _requestFlags & RequestFlag_Session )
 	{
@@ -203,7 +204,7 @@ void SwitchAll::CreateVars
 	uint8 const _instance
 )
 {
-#if 0
+#ifndef SWITCHALL_DISABLE_CONF
 	if( Node* node = GetNodeUnsafe() )
 	{
 		vector<ValueList::Item> items;
