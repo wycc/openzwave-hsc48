@@ -4141,10 +4141,18 @@ void Driver::InitNode
 	if( m_nodes[_nodeId] )
 	{
 		// Remove the original node
-		delete m_nodes[_nodeId];
-		Notification* notification = new Notification( Notification::Type_NodeRemoved );
+		//delete m_nodes[_nodeId];
+		//Notification* notification = new Notification( Notification::Type_NodeRemoved );
+		//notification->SetHomeAndNodeIds( m_homeId, _nodeId );
+		//QueueNotification( notification );
+		// Don't remove the node. We will perform the dynamic part only for an existed node.
+		// This will save the time when we learn an existed node
+		ReleaseNodes();
+		Notification* notification = new Notification( Notification::Type_NodeAdded );
 		notification->SetHomeAndNodeIds( m_homeId, _nodeId );
 		QueueNotification( notification );
+		m_nodes[_nodeId]->SetQueryStage( Node::QueryStage_Dynamic );
+		return;
 	}
 
 	// Add the new node
