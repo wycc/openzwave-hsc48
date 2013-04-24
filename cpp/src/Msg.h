@@ -52,6 +52,7 @@ namespace OpenZWave
 		~Msg(){}
 
 		void SetInstance( CommandClass* _cc, uint8 const _instance );	// Used to enable wrapping with MultiInstance/MultiChannel during finalize.
+		void SetEndPoint (CommandClass* _cc, uint8 const _endpoint);
 
 		void Append( uint8 const _data );
 		void Finalize();

@@ -81,6 +81,38 @@ Msg::Msg
 // <Msg::SetInstance>
 // Used to enable wrapping with MultiInstance/MultiChannel during finalize.
 //-----------------------------------------------------------------------------
+void Msg::SetEndPoint
+(
+	CommandClass* _cc,
+	uint8 const _endpoint
+)
+{
+	if( Node* node = _cc->GetNodeUnsafe() ) {
+		MultiInstance* micc = static_cast<MultiInstance*>( node->GetCommandClass( MultiInstance::StaticGetCommandClassId() ) );
+		m_endPoint = _endpoint;	
+		if( micc->GetVersion() > 1 )
+		{
+			if( m_endPoint > 1 )
+			{
+				// Set the flag bit to indicate MultiInstance rather than MultiChannel
+				m_flags |= m_MultiChannel;
+				m_expectedCommandClassId = MultiInstance::StaticGetCommandClassId();
+			}
+		} else {
+			if( m_endPoint > 1 )
+			{
+				// Set the flag bit to indicate MultiInstance rather than MultiChannel
+				m_flags |= m_MultiInstance;
+				m_expectedCommandClassId = MultiInstance::StaticGetCommandClassId();
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// <Msg::SetInstance>
+// Used to enable wrapping with MultiInstance/MultiChannel during finalize.
+//-----------------------------------------------------------------------------
 void Msg::SetInstance
 (
 	CommandClass* _cc,
