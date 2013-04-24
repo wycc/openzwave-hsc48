@@ -1369,6 +1369,10 @@ bool Driver::HandleErrorResponse
 			// first try to move its pending messages to its wake-up queue.
 			if( MoveMessagesToWakeUpQueue( m_currentMsg->GetTargetNodeId(), _sleepCheck ) )
 			{
+				// We must mark it as not alive here so that the query stage will be complete.
+				// It might be marked as live latter when we receive the wakeup message from it.
+				if( Node* node = GetNodeUnsafe( _nodeId ) )
+					node->SetNodeAlive( false );
 				return true;
 			}
 			Log::Write( LogLevel_Warning, _nodeId, "WARNING: Device is not a sleeping node." );
