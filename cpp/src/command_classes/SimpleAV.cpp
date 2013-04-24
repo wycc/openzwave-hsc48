@@ -36,6 +36,7 @@
 #include "Log.h"
 
 #include "ValueButton.h"
+#include "ValueByte.h"
 
 using namespace OpenZWave;
 
@@ -44,6 +45,7 @@ enum SimpleAVCmd
 	SimpleAVCmd_Set		= 0x01,
 	SimpleAVCmd_Get		= 0x02,
 	SimpleAVCmd_Report	= 0x03,
+	SimpleAVCmd_Learn	= 0x20,
 	SimpleAVCmd_Supported_Get	= 0x04,
 	SimpleAVCmd_Supported_Report	= 0x05
 };
@@ -59,9 +61,9 @@ bool SimpleAV::RequestState
 	Driver::MsgQueue const _queue
 )
 {
-	if( _requestFlags & RequestFlag_Dynamic )
+	if( _requestFlags & RequestFlag_Static )
 	{
-		return RequestValue( _requestFlags, 0, _instance, _queue );
+		//return RequestValue( _requestFlags, 0, _instance, _queue );
 	}
 
 	return false;
@@ -79,7 +81,8 @@ bool SimpleAV::RequestValue
 	Driver::MsgQueue const _queue
 )
 {
-	Msg* msg = new Msg( "SimpleAVCmd_Get", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true, true, FUNC_ID_APPLICATION_COMMAND_HANDLER, StaticGetCommandClassId() );
+	return false;
+	Msg* msg = new Msg( "SimpleAVCmd_Get", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true,true,FUNC_ID_APPLICATION_COMMAND_HANDLER, GetCommandClassId() );
 	msg->SetInstance( this, _instance );
 	msg->Append( GetNodeId() );
 	msg->Append( 2 );
@@ -111,7 +114,7 @@ bool SimpleAV::HandleMsg
 
 
 		for(i=0;i<_data[1];i++) {
-			Msg* msg = new Msg( "SimpleAVCmd_Supported_Get", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true);
+			Msg* msg = new Msg( "SimpleAVCmd_Supported_Get", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true,true,FUNC_ID_APPLICATION_COMMAND_HANDLER, GetCommandClassId());
 			msg->SetInstance( this, _instance );
 			msg->Append( GetNodeId() );
 			msg->Append( 3 );
@@ -157,32 +160,47 @@ bool SimpleAV::SetValue
 	Value const& _value
 )
 {
-	ValueButton const* bt = static_cast<ValueButton const*>(&_value);
 	int instance = _value.GetID().GetInstance();
-	int index = _value.GetID().GetIndex();
+	ValueByte const* value = static_cast<ValueByte const*>(&_value);
+	int index = value->GetValue();
 
 	Msg* msg = new Msg( "SimpleAV Set", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true );		
-	msg->SetInstance( this, instance );
-	msg->Append( GetNodeId() );
-	msg->Append( 8);
-	msg->Append(GetCommandClassId() );
-	msg->Append(SimpleAVCmd_Set);
-	msg->Append(m_seq++);
-	if (bt->IsPressed()) {
+	Log::Write(LogLevel_Info,"Index is %d instance %d", index,instance);
+	if (instance > 20) {
+		instance -= 20;
+		Log::Write(LogLevel_Info,"send to isnstance %d", instance+10);
+		msg->SetEndPoint( this, instance+10);
+		msg->Append( GetNodeId() );
+		msg->Append( 8);
+		msg->Append(GetCommandClassId() );
+		msg->Append(SimpleAVCmd_Set);
+		msg->Append(m_seq++);
 		msg->Append(0);
+		msg->Append(0);
+		msg->Append(0);
+		msg->Append(index/256);
+		msg->Append(index%256);
+		msg->Append( GetDriver()->GetTransmitOptions() );
+		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+		return false;
 	} else {
-		msg->Append(1);
+		msg->SetEndPoint( this, instance );
+		msg->Append( GetNodeId() );
+		msg->Append( 8);
+		msg->Append(GetCommandClassId() );
+		msg->Append(SimpleAVCmd_Set);
+		msg->Append(m_seq++);
+		msg->Append(0);
+		msg->Append(0);
+		msg->Append(0);
+		msg->Append(index/256);
+		msg->Append(index%256);
+		msg->Append( GetDriver()->GetTransmitOptions() );
+		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+		return false;
 	}
-	msg->Append(0);
-	msg->Append(0);
-	msg->Append(index/256);
-	msg->Append(index%256);
-	msg->Append( GetDriver()->GetTransmitOptions() );
-	GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
-	return false;
+
 }
-
-
 //-----------------------------------------------------------------------------
 // <SimpleAV::CreateVars>
 // Create the values managed by this command class
@@ -193,4 +211,8 @@ void SimpleAV::CreateVars
 )
 {
 	// Create values at report
+	if( Node* node = GetNodeUnsafe() ) {
+  		node->CreateValueByte( ValueID::ValueGenre_Basic, GetCommandClassId(), _instance, 0, "Send IR", "", false, false, 0, 0 );
+  		node->CreateValueByte( ValueID::ValueGenre_Basic, GetCommandClassId(), _instance+20, 255, "Learn IR", "", false, false, 0, 0 );
+	}
 }
