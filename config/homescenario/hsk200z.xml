@@ -3,4 +3,5 @@
 <Product xmlns='http://code.google.com/p/open-zwave/'>
   <!-- Configuration Parameters -->
   <CommandClass id="96" version="2" />
+  <CommandClass id="114" version="3" />
 </Product>
