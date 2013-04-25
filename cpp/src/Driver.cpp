@@ -423,6 +423,7 @@ void Driver::DriverThreadProc
 					default:
 					{
 						// All the other events are sending message queue items
+						Log::Write(LogLevel_Info,"Check queue %d", res);
 						if( WriteNextMsg( (MsgQueue)(res-3) ) )
 						{
 							retryTimeStamp.SetTime( RETRY_TIMEOUT );
@@ -1083,6 +1084,13 @@ bool Driver::WriteMsg
 		if( node != NULL && !node->IsNodeAlive() )
 		{
 			Log::Write( LogLevel_Error, nodeId, "Node is dead. We send the message without waiting for the respose." );
+			RemoveCurrentMsg();
+			m_dropped++;
+			if( node != NULL )
+			{
+		    		ReleaseNodes();
+			}
+			return false;
 		}
 		else
 		{
@@ -1371,9 +1379,9 @@ bool Driver::HandleErrorResponse
 			{
 				// We must mark it as not alive here so that the query stage will be complete.
 				// It might be marked as live latter when we receive the wakeup message from it.
-				if( Node* node = GetNodeUnsafe( _nodeId ) )
+				if( Node* node = GetNodeUnsafe( _nodeId ) ) 
 					node->SetNodeAlive( false );
-				return true;
+				return false;
 			}
 			Log::Write( LogLevel_Warning, _nodeId, "WARNING: Device is not a sleeping node." );
 		}
