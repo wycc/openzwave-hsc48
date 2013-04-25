@@ -369,7 +369,9 @@ bool Value::Set
 					if( !IsWriteOnly() )
 					{
 						// queue a "RequestValue" message to update the value
-						cc->RequestValue( 0, m_id.GetIndex(), m_id.GetInstance(), Driver::MsgQueue_Send );
+						// FIXME: We need a better way to update the value. For switch binary, we may not need to do this.
+						//        We need to do this for the dimmer only.
+						//cc->RequestValue( 0, m_id.GetIndex(), m_id.GetInstance(), Driver::MsgQueue_Send );
 					}
 					else
 					{
