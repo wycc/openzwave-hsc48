@@ -385,11 +385,13 @@ void Driver::DriverThreadProc
 
 				// Wait for something to do
 				int32 res = Wait::Multiple( waitObjects, count, timeout );
+				Log::Write(LogLevel_Info,"Next action is %d m_expectedReply=%d m_expectedCallbackId=%d ", res, m_expectedReply, m_expectedCallbackId);
 				switch( res )
 				{
 					case -1:
 					{
 						// Wait has timed out - time to resend
+						Log::Write(LogLevel_Info,"Send timeout");
 						if( m_currentMsg != NULL )
 						{
 							Notification* notification = new Notification( Notification::Type_Notification );
@@ -1294,6 +1296,7 @@ bool Driver::MoveMessagesToWakeUpQueue
 									Log::Write( LogLevel_Info, _targetNodeId, "Node not responding - moving QueryStageComplete command to Wake-Up queue" );
 									wakeUp->QueueMsg( item );
 									remove = true;
+									Log::Write( LogLevel_Info, _targetNodeId, "Finish" );
 								}
 							}
 							if( MsgQueueCmd_Controller == item.m_command )
@@ -1336,6 +1339,7 @@ bool Driver::MoveMessagesToWakeUpQueue
 					}
 
 					m_sendMutex->Unlock();
+					Log::Write(LogLevel_Info,"%s:%d", __FILE__,__LINE__);
 
 					// Move completed successfully
 					return true;
@@ -1345,12 +1349,14 @@ bool Driver::MoveMessagesToWakeUpQueue
 	}
 
 	// Failed to move messages
+	Log::Write(LogLevel_Info,"Return");
 	return false;
 }
 
 //-----------------------------------------------------------------------------
 // <Driver::HandleErrorResponse>
 // For messages that return a ZW_SEND_DATA response, process the results here
+
 // If it is a non-listeing (sleeping) node return true.
 //-----------------------------------------------------------------------------
 bool Driver::HandleErrorResponse
@@ -1381,8 +1387,18 @@ bool Driver::HandleErrorResponse
 				// It might be marked as live latter when we receive the wakeup message from it.
 				if( Node* node = GetNodeUnsafe( _nodeId ) ) 
 					node->SetNodeAlive( false );
-				return false;
+				Log::Write(LogLevel_Info,"%s:%d", __FILE__,__LINE__);
+				return true;
+			} else {
+				// This is not battery powered device. It could be either out of power or not reachable.
+				// We will mark it as dead if the command is NoOP.
+				if( m_currentMsg->IsNoOperation() ) {
+					if( Node* node = GetNodeUnsafe( _nodeId ) ) 
+						node->SetNodeAlive( false );
+				}
 			}
+
+
 			Log::Write( LogLevel_Warning, _nodeId, "WARNING: Device is not a sleeping node." );
 		}
 	}
@@ -2797,7 +2813,7 @@ void Driver::HandleSendDataRequest
 		if( _data[3] != 0 )
 		{
 			if( !HandleErrorResponse( _data[3], nodeId, _replication ? "ZW_REPLICATION_END_DATA" : "ZW_SEND_DATA", !_replication ) )
-			{
+			{		
 				if( m_currentMsg->IsNoOperation() && node != NULL &&
 				    ( node->GetCurrentQueryStage() == Node::QueryStage_Probe  ||
 				      node->GetCurrentQueryStage() == Node::QueryStage_Probe1 ) )
