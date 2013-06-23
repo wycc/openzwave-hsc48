@@ -374,11 +374,15 @@ void Association::Remove
 
 	Msg* msg = new Msg( "Association Remove", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true );		
 	msg->Append( GetNodeId() );
-	msg->Append( 4 );
+	if (_targetNodeId > 0)
+		msg->Append( 4 );
+	else
+		msg->Append( 3 );
 	msg->Append( GetCommandClassId() );
 	msg->Append( AssociationCmd_Remove );
 	msg->Append( _groupIdx );
-	msg->Append( _targetNodeId );
+	if (_targetNodeId > 0)
+		msg->Append( _targetNodeId );
 	msg->Append( GetDriver()->GetTransmitOptions() );
 	GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
 }
