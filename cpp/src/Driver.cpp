@@ -2805,7 +2805,11 @@ void Driver::HandleSendDataRequest
 		{
 			Notification* notification = new Notification( Notification::Type_Notification );
 			notification->SetHomeAndNodeIds( m_homeId, GetNodeNumber( m_currentMsg) );
-			notification->SetNotification( Notification::Code_NoOperation );
+			if (_data[3] != 0) {
+				notification->SetNotification( Notification::Code_NoOperation_Fail );
+			} else {
+				notification->SetNotification( Notification::Code_NoOperation );
+			}
 			QueueNotification( notification );
 		}
 
@@ -3523,6 +3527,11 @@ void Driver::HandleNodeNeighborUpdateRequest
 			Log::Write( LogLevel_Info, nodeId, "REQUEST_NEIGHBOR_UPDATE_DONE" );
 			state = ControllerState_Completed;
 
+			Notification* notification = new Notification( Notification::Type_Notification );
+			notification->SetHomeAndNodeIds( m_homeId, nodeId );
+			notification->SetNotification(Notification::Code_Route_Update_Ok);
+			QueueNotification( notification );
+
 			// We now request the neighbour information from the
 			// controller and store it in our node object.
 			if( m_currentControllerCommand != NULL )
@@ -3535,6 +3544,10 @@ void Driver::HandleNodeNeighborUpdateRequest
 		{
 			Log::Write( LogLevel_Warning, nodeId, "WARNING: REQUEST_NEIGHBOR_UPDATE_FAILED" );
 			state = ControllerState_Failed;
+			Notification* notification = new Notification( Notification::Type_Notification );
+			notification->SetHomeAndNodeIds( m_homeId, nodeId );
+			notification->SetNotification(Notification::Code_Route_Update_Fail);
+			QueueNotification( notification );
 			break;
 		}
 		default:
