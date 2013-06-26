@@ -482,8 +482,8 @@ void Node::AdvanceQueries
 				}
 				else
 				{
-					//m_queryStage = QueryStage_Associations;
-					m_queryStage = QueryStage_Neighbors;
+					m_queryStage = QueryStage_Associations;
+					//m_queryStage = QueryStage_Neighbors;
 					m_queryRetries = 0;
 				}
 				break;
@@ -617,10 +617,12 @@ void Node::QueryStageComplete
 	{
 		// Move to the next stage
 		m_queryPending = false;
-		if (m_queryStage == QueryStage_Probe1)
-			m_queryStage = QueryStage_Neighbors;
-		else
+		if (m_queryStage == QueryStage_Probe1) {
+			//m_queryStage = QueryStage_Neighbors;
+			m_queryStage = QueryStage_Associations;
+		} else {
 			m_queryStage = (QueryStage)( (uint32)m_queryStage + 1 );
+		}
 		if( m_queryStage == QueryStage_Probe1 )
 		{
 			//m_queryStage = (QueryStage)( (uint32)m_queryStage + 1 );
