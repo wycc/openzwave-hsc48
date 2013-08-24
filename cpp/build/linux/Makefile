@@ -22,9 +22,9 @@ DEBUG_LDFLAGS	:= -g
 
 # Change for DEBUG or RELEASE
 CFLAGS	:= -c $(DEBUG_CFLAGS)
-LDFLAGS	:= $(DEBUG_LDFLAGS)
+LDFLAGS	:= $(DEBUG_LDFLAGS) -L../../src/command_classes/libaes -laes
 
-LIBDIR	:= ../../lib/linux
+LIBDIR	:= ../../lib/linux/
 
 INCLUDES	:= -I ../../src -I ../../src/command_classes/ -I ../../src/value_classes/ \
 	-I ../../src/platform/ -I ../../src/platform/unix -I ../../tinyxml/ -I ../../hidapi/hidapi/
@@ -54,7 +54,7 @@ indep := $(notdir $(wildcard ../../src/*.cpp))
 %.o : %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $<
 
-default:	$(LIBDIR)/libopenzwave.a $(LIBDIR)/libopenzwave.so
+default:	$(LIBDIR)/libopenzwave.a $(LIBDIR)/libopenzwave.so ../../src/command_classes/libaes/libaes.a
 
 clean:
 	rm -f *.d *.d.* *.o vers.c
@@ -82,17 +82,19 @@ vers.c:	verscheck
 	echo 'char ozw_vers[] = "OpenZWave version 1.0.'`svnversion ../..`'";' > vers.c
 
 vers.o:	vers.c
+../../src/command_classes/libaes/libaes.a: 
+	make -C ../../src/command_classes/libaes CPP=$(CC)
 
 $(LIBDIR)/libopenzwave.a:	$(patsubst %.cpp,%.o,$(tinyxml)) \
 			$(patsubst %.cpp,%.o,$(cclasses)) \
 			$(patsubst %.cpp,%.o,$(vclasses)) \
 			$(patsubst %.cpp,%.o,$(pform)) \
-			$(patsubst %.cpp,%.o,$(indep)) vers.o
+			$(patsubst %.cpp,%.o,$(indep)) vers.o ../../src/command_classes/libaes/libaes.a
 	$(AR) $@ $?
 
 $(LIBDIR)/libopenzwave.so:	$(patsubst %.cpp,%.o,$(tinyxml)) \
 			$(patsubst %.cpp,%.o,$(cclasses)) \
 			$(patsubst %.cpp,%.o,$(vclasses)) \
 			$(patsubst %.cpp,%.o,$(pform)) \
-			$(patsubst %.cpp,%.o,$(indep)) vers.o
-	$(LD) -shared -Wl,-soname,libopenzwave.so -o $@ $+
+			$(patsubst %.cpp,%.o,$(indep)) vers.o  ../../src/command_classes/libaes/libaes.a
+	$(LD) -shared -Wl,-soname,libopenzwave.so -o $@ $+ ../../src/command_classes/libaes/libaes.a 
