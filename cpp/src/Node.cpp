@@ -608,6 +608,7 @@ void Node::QueryStageComplete
 )
 {
 	// Check that we are actually on the specified stage
+	Log::Write(LogLevel_Info,"Query stage %d is complete, current stage is %d", _stage, m_queryStage);
 	if( _stage != m_queryStage )
 	{
 		return;
@@ -620,6 +621,9 @@ void Node::QueryStageComplete
 		if (m_queryStage == QueryStage_Probe1) {
 			//m_queryStage = QueryStage_Neighbors;
 			m_queryStage = QueryStage_Associations;
+
+		} else if (m_queryStage == QueryStage_Static) {
+			m_queryStage = QueryStage_Associations;
 		} else {
 			m_queryStage = (QueryStage)( (uint32)m_queryStage + 1 );
 		}
@@ -630,6 +634,7 @@ void Node::QueryStageComplete
 		}
 		m_queryRetries = 0;
 	}
+	Log::Write(LogLevel_Info,"next stage is %d", m_queryStage);
 }
 
 //-----------------------------------------------------------------------------
