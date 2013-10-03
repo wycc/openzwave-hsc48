@@ -83,7 +83,7 @@ vers.c:	verscheck
 
 vers.o:	vers.c
 ../../src/command_classes/libaes/libaes.a: 
-	make -C ../../src/command_classes/libaes CPP=$(CC)
+	make -C ../../src/command_classes/libaes CC=$(CC) CPP=$(CC)
 
 $(LIBDIR)/libopenzwave.a:	$(patsubst %.cpp,%.o,$(tinyxml)) \
 			$(patsubst %.cpp,%.o,$(cclasses)) \
