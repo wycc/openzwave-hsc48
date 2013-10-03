@@ -385,7 +385,7 @@ void Driver::DriverThreadProc
 
 				// Wait for something to do
 				int32 res = Wait::Multiple( waitObjects, count, timeout );
-				Log::Write(LogLevel_Info,"Next action is %d m_expectedReply=%d m_expectedCallbackId=%d ", res, m_expectedReply, m_expectedCallbackId);
+				//Log::Write(LogLevel_Info,"Next action is %d m_expectedReply=%d m_expectedCallbackId=%d ", res, m_expectedReply, m_expectedCallbackId);
 				switch( res )
 				{
 					case -1:
@@ -425,7 +425,7 @@ void Driver::DriverThreadProc
 					default:
 					{
 						// All the other events are sending message queue items
-						Log::Write(LogLevel_Info,"Check queue %d", res);
+						//Log::Write(LogLevel_Info,"Check queue %d", res);
 						if( WriteNextMsg( (MsgQueue)(res-3) ) )
 						{
 							retryTimeStamp.SetTime( RETRY_TIMEOUT );
@@ -4738,7 +4738,8 @@ Value* Driver::GetValue
 
 //-----------------------------------------------------------------------------
 // <Driver::ResetController>
-// Reset controller and erase all node information
+// Reset controller and erase all node information. We will set ourself as SIS
+// by default.
 //-----------------------------------------------------------------------------
 void Driver::ResetController
 (
@@ -4749,6 +4750,20 @@ void Driver::ResetController
 	Log::Write( LogLevel_Info, "Reset controller and erase all node information");
 	Msg* msg = new Msg( "Reset controller and erase all node information", 0xff, REQUEST, FUNC_ID_ZW_SET_DEFAULT, true );
 	SendMsg( msg, MsgQueue_Command );
+	Log::Write( LogLevel_Info, "  No SUC, so we become SUC" );
+
+	msg = new Msg( "Enable SUC", m_nodeId, REQUEST, FUNC_ID_ZW_ENABLE_SUC, false );
+	msg->Append( 1 );
+	msg->Append( SUC_FUNC_BASIC_SUC );			// SUC
+	msg->Append( SUC_FUNC_NODEID_SERVER );		// SIS
+	SendMsg( msg, MsgQueue_Send );
+
+	msg = new Msg( "Set SUC node ID", m_nodeId, REQUEST, FUNC_ID_ZW_SET_SUC_NODE_ID, false );
+	msg->Append( m_nodeId );
+	msg->Append( 1 );								// TRUE, we want to be SUC/SIS
+	msg->Append( 0 );								// no low power
+	msg->Append( SUC_FUNC_NODEID_SERVER );
+	SendMsg( msg, MsgQueue_Send );
 }
 
 //-----------------------------------------------------------------------------
