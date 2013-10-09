@@ -5316,6 +5316,11 @@ void Driver::TestNetwork
 		{
 			noop->Set( true );
 		}
+	} else {
+		Notification* notification = new Notification( Notification::Type_Notification );
+		notification->SetHomeAndNodeIds( m_homeId, _nodeId);
+		notification->SetNotification( Notification::Code_NoOperation_Fail );
+		QueueNotification( notification );
 	}
 	ReleaseNodes();
 }
