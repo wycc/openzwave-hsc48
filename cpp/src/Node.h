@@ -253,6 +253,8 @@ namespace OpenZWave
 		bool		m_manufacturerSpecificClassReceived;
 		bool		m_nodeInfoSupported;
 		bool		m_nodeAlive;
+		int		m_lastCheckTime;
+		
 
 	//-----------------------------------------------------------------------------
 	// Capabilities

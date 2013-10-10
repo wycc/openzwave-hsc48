@@ -55,6 +55,7 @@
 #include "ValueID.h"
 #include "Value.h"
 #include "ValueStore.h"
+#include <sys/time.h>
 
 #include <algorithm>
 
@@ -1086,6 +1087,13 @@ bool Driver::WriteMsg
 		if( node != NULL && !node->IsNodeAlive() )
 		{
 			Log::Write( LogLevel_Error, nodeId, "Node is dead. We send the message without waiting for the respose." );
+			struct timeval now;
+
+			gettimeofday(&now, NULL);
+			if (now.tv_sec > node->m_lastCheckTime+20) {
+				m_controller->Write( m_currentMsg->GetBuffer(), m_currentMsg->GetLength() );
+				node->m_lastCheckTime = now.tv_sec;
+			}
 			RemoveCurrentMsg();
 			m_dropped++;
 			if( node != NULL )
@@ -3319,6 +3327,7 @@ void Driver::HandleApplicationCommandHandlerRequest
 	}
 	if( node != NULL )
 	{
+		node->SetNodeAlive(true);
 		node->m_receivedCnt++;
 		node->m_errors = 0;
 		int cmp = memcmp( _data, node->m_lastReceivedMessage, sizeof(node->m_lastReceivedMessage));
