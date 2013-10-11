@@ -154,6 +154,7 @@ Node::Node
 	memset( m_neighbors, 0, sizeof(m_neighbors) );
 	memset( m_routeNodes, 0, sizeof(m_routeNodes) );
 	AddCommandClass( 0 );
+	m_lastCheckTime=0;
 }
 
 //-----------------------------------------------------------------------------
