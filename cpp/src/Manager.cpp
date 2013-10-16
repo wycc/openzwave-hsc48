@@ -1345,9 +1345,10 @@ bool Manager::IsNodeFailed
 	uint8 const _nodeId
 )
 {
-	bool result = false;
+	bool result = true;
 	if( Driver* driver = GetDriver( _homeId ) )
 	{
+		driver->LockNodes();
 	        if( Node* node = driver->GetNode( _nodeId ) )
 	        {
 			result = !node->IsNodeAlive();
