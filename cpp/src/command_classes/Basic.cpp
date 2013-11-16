@@ -59,7 +59,7 @@ Basic::Basic
 	CommandClass( _homeId, _nodeId ),
 	m_mapping( 0 ),
 	m_ignoreMapping( false ),
-	m_setAsReport( false )
+	m_setAsReport( true )
 {
 }
 
