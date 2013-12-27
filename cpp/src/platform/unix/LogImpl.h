@@ -62,6 +62,7 @@ namespace OpenZWave
 		LogLevel m_saveLevel;
 		LogLevel m_queueLevel;
 		LogLevel m_dumpTrigger;
+		int m_socket;
 	};
 
 } // namespace OpenZWave
