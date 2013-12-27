@@ -27,6 +27,8 @@
 //-----------------------------------------------------------------------------
 #include <string>
 #include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "Defs.h"
 #include "LogImpl.h"
 
@@ -61,6 +63,16 @@ LogImpl::LogImpl
 		}
 	}
 	setlinebuf(stdout);	// To prevent buffering and lock contention issues
+	struct sockaddr_in addr;
+	addr.sin_family = PF_INET;
+	addr.sin_port = htons(0);
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	m_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	int broadcastEnable=1;
+	setsockopt(m_socket, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+	setsockopt(m_socket, SOL_SOCKET, SO_BINDTODEVICE, "eth2.2",6);
+	int len = sizeof(addr);
+	bind(m_socket, (struct sockaddr *)&addr, len);
 }
 
 //-----------------------------------------------------------------------------
@@ -143,6 +155,11 @@ void LogImpl::Write
 				{
 					fputs( outBuf, stdout );
 				}
+				struct sockaddr_in addr;
+				addr.sin_family = PF_INET;
+				addr.sin_port =htons(1999);
+				addr.sin_addr.s_addr = htonl(0xffffffff);
+				sendto(m_socket, outBuf, strlen(outBuf), 0, (struct sockaddr *) &addr, sizeof(addr));
 			}
 		}
 
