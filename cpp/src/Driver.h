@@ -531,6 +531,7 @@ namespace OpenZWave
 		ControllerCommandItem*			m_currentControllerCommand;
 
 		void DoControllerCommand();
+		void MakeNodeAlive(uint8 n);
 		void UpdateControllerState( ControllerState const _state, ControllerError const _error = ControllerError_None )
 		{
 			if( m_currentControllerCommand != NULL )

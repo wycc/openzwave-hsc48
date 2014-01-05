@@ -386,7 +386,7 @@ void Driver::DriverThreadProc
 
 				// Wait for something to do
 				int32 res = Wait::Multiple( waitObjects, count, timeout );
-				//Log::Write(LogLevel_Info,"Next action is %d m_expectedReply=%d m_expectedCallbackId=%d ", res, m_expectedReply, m_expectedCallbackId);
+				Log::Write(LogLevel_Info,"Next action is %d m_expectedReply=%d m_expectedCallbackId=%d ", res, m_expectedReply, m_expectedCallbackId);
 				switch( res )
 				{
 					case -1:
@@ -976,6 +976,7 @@ bool Driver::WriteNextMsg
 	// There are messages to send, so get the one at the front of the queue
 	m_sendMutex->Lock();
 	MsgQueueItem item = m_msgQueue[_queue].front();
+	Log::Write(LogLevel_Info, "command=%d", item.m_command);
 
 	if( MsgQueueCmd_SendMsg == item.m_command )
 	{
@@ -1021,6 +1022,7 @@ bool Driver::WriteNextMsg
 		// Run a multi-step controller command
 		m_currentControllerCommand = item.m_cci;
 		m_sendMutex->Unlock();
+		Log::Write(LogLevel_Info,"done=%d state=%d change=%d", m_currentControllerCommand->m_controllerCommandDone, m_currentControllerCommand->m_controllerState , m_currentControllerCommand->m_controllerStateChanged);
 		// Figure out if done with command
 		if ( m_currentControllerCommand->m_controllerCommandDone )
 		{
@@ -1082,7 +1084,7 @@ bool Driver::WriteMsg
 	uint8 attempts = m_currentMsg->GetSendAttempts();
 	uint8 nodeId = m_currentMsg->GetTargetNodeId();
 	Node* node = GetNode( nodeId );
-	if( attempts >= m_currentMsg->GetMaxSendAttempts() || (node != NULL && !node->IsNodeAlive() && !m_currentMsg->IsNoOperation() ) )
+	if( attempts >= m_currentMsg->GetMaxSendAttempts() || (node != NULL && !node->IsNodeAlive() && !m_currentMsg->IsNoOperation()) )
 	{
 		if( node != NULL && !node->IsNodeAlive() )
 		{
@@ -2804,6 +2806,7 @@ void Driver::HandleSendDataRequest
 					// if this is the first observed RTT, set the average to this value
 					node->m_averageRequestRTT = node->m_lastRequestRTT;
 				}
+				//node->SetNodeAlive(true);
 				Log::Write(LogLevel_Info, nodeId, "Request RTT %d Average Request RTT %d", node->m_lastRequestRTT, node->m_averageRequestRTT );
 			}
 		}
@@ -3365,6 +3368,7 @@ void Driver::HandleApplicationCommandHandlerRequest
 		}
 	}
 	if (Basic::StaticGetCommandClassId() == classId) {
+		// Treat this as BASIC_REPORT
 	}
 
 	if (Version::StaticGetCommandClassId() == classId) {
@@ -4858,7 +4862,15 @@ bool Driver::BeginControllerCommand
 
 	return true;
 }
+void Driver::MakeNodeAlive(uint8 n)
+{
+	Node* node = GetNodeUnsafe(n); 
+	if( node != NULL )
+	{
+		node->SetNodeAlive(true);
 
+	}
+}
 //-----------------------------------------------------------------------------
 // <Driver::DoControllerCommand>
 // Start the controller performing one of its network management functions
@@ -4932,6 +4944,7 @@ void Driver::DoControllerCommand
 			Log::Write( LogLevel_Info, 0, "Requesting whether node %d has failed", m_currentControllerCommand->m_controllerCommandNode );
 			Msg* msg = new Msg( "Has Node Failed?", 0xff, REQUEST, FUNC_ID_ZW_IS_FAILED_NODE_ID, false );
 			msg->Append( m_currentControllerCommand->m_controllerCommandNode );
+			MakeNodeAlive(m_currentControllerCommand->m_controllerCommandNode);
 			SendMsg( msg, MsgQueue_Command );
 			break;
 		}
@@ -4940,6 +4953,7 @@ void Driver::DoControllerCommand
 			Log::Write( LogLevel_Info, 0, "Marking node %d as having failed", m_currentControllerCommand->m_controllerCommandNode );
 			Msg* msg = new Msg( "Mark Node As Failed", 0xff, REQUEST, FUNC_ID_ZW_REMOVE_FAILED_NODE_ID, true );
 			msg->Append( m_currentControllerCommand->m_controllerCommandNode );
+			MakeNodeAlive(m_currentControllerCommand->m_controllerCommandNode);
 			SendMsg( msg, MsgQueue_Command );
 			break;
 		}
@@ -4948,6 +4962,7 @@ void Driver::DoControllerCommand
 			Log::Write( LogLevel_Info, 0, "Replace Failed Node %d", m_currentControllerCommand->m_controllerCommandNode );
 			Msg* msg = new Msg( "ReplaceFailedNode", 0xff, REQUEST, FUNC_ID_ZW_REPLACE_FAILED_NODE, true );
 			msg->Append( m_currentControllerCommand->m_controllerCommandNode );
+			MakeNodeAlive(m_currentControllerCommand->m_controllerCommandNode);
 			SendMsg( msg, MsgQueue_Command );
 			break;
 		}
@@ -5004,6 +5019,7 @@ void Driver::DoControllerCommand
 				{
 					msg->Append( GetTransmitOptions() );
 				}
+				MakeNodeAlive(m_currentControllerCommand->m_controllerCommandNode);
 				SendMsg( msg, MsgQueue_Command );
 			}
 			break;
@@ -5014,6 +5030,7 @@ void Driver::DoControllerCommand
 			Msg* msg = new Msg( "Assigning return route", m_currentControllerCommand->m_controllerCommandNode, REQUEST, FUNC_ID_ZW_ASSIGN_RETURN_ROUTE, true );
 			msg->Append( m_currentControllerCommand->m_controllerCommandNode );		// from the node
 			msg->Append( m_currentControllerCommand->m_controllerCommandArg );		// to the specific destination
+			MakeNodeAlive(m_currentControllerCommand->m_controllerCommandNode);
 			SendMsg( msg, MsgQueue_Command );
 			break;
 		}
@@ -5022,6 +5039,7 @@ void Driver::DoControllerCommand
 			Log::Write( LogLevel_Info, 0, "Deleting all return routes from node %d", m_currentControllerCommand->m_controllerCommandNode );
 			Msg* msg = new Msg( "Deleting return routes", m_currentControllerCommand->m_controllerCommandNode, REQUEST, FUNC_ID_ZW_DELETE_RETURN_ROUTE, true );
 			msg->Append( m_currentControllerCommand->m_controllerCommandNode );		// from the node
+			MakeNodeAlive(m_currentControllerCommand->m_controllerCommandNode);
 			SendMsg( msg, MsgQueue_Command );
 			break;
 		}
