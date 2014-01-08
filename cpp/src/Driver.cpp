@@ -3377,6 +3377,10 @@ void Driver::HandleApplicationCommandHandlerRequest
 		{
 			node->m_receivedUnsolicited++;
 		}
+		if ( !node->IsNodeAlive() )
+		{
+			node->SetNodeAlive( true );
+		}
 	}
 	if (Basic::StaticGetCommandClassId() == classId) {
 		// Treat this as BASIC_REPORT
