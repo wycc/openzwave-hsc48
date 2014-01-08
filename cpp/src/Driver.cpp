@@ -379,6 +379,10 @@ void Driver::DriverThreadProc
 						timeout = 0;
 					}
 				}
+				else if( m_currentControllerCommand != NULL )
+				{
+					count = 6;
+				}
 				else
 				{
 					Log::QueueClear();							// clear the log queue when starting a new message
@@ -1053,6 +1057,13 @@ bool Driver::WriteNextMsg
 				m_currentControllerCommand->m_controllerCallback( m_currentControllerCommand->m_controllerState, m_currentControllerCommand->m_controllerReturnError, m_currentControllerCommand->m_controllerCallbackContext );
 				m_currentControllerCommand->m_controllerStateChanged = false;
 			}
+		}
+		else 
+		{
+			Log::Write( LogLevel_Info, "WriteNextMsg Controller nothing to do" );
+			m_sendMutex->Lock();
+			m_queueEvent[_queue]->Reset();
+			m_sendMutex->Unlock();
 		}
 		return true;
 	}
