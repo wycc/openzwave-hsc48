@@ -3593,8 +3593,14 @@ bool Driver::HandleApplicationUpdateRequest
 )
 {
 	bool messageRemoved = false;
-
 	uint8 nodeId = _data[3];
+	Node* node = GetNodeUnsafe( nodeId );
+
+	// If node is not alive, mark it alive now
+	if( node != NULL && !node->IsNodeAlive() )
+	{
+		node->SetNodeAlive( true );
+	}
 
 	switch( _data[2] )
 	{
@@ -3639,16 +3645,16 @@ bool Driver::HandleApplicationUpdateRequest
 			// assume the message came from the last node to which we sent a request.
 			if( m_currentMsg )
 			{
-				Node* node = GetNodeUnsafe( m_currentMsg->GetTargetNodeId() );
+				Node* tnode = GetNodeUnsafe( m_currentMsg->GetTargetNodeId() );
 				if( node )
 				{
 					// Retry the query twice
-					node->QueryStageRetry( Node::QueryStage_NodeInfo, 2 );
+					tnode->QueryStageRetry( Node::QueryStage_NodeInfo, 2 );
 
 					// Just in case the failure was due to the node being asleep, we try
 					// to move its pending messages to its wakeup queue.  If it is not
 					// a sleeping device, this will have no effect.
-					if( MoveMessagesToWakeUpQueue( node->GetNodeId(), true ) )
+					if( MoveMessagesToWakeUpQueue( tnode->GetNodeId(), true ) )
 					{
 						messageRemoved = true;
 					}
@@ -3664,7 +3670,7 @@ bool Driver::HandleApplicationUpdateRequest
 		case UPDATE_STATE_NODE_INFO_RECEIVED:
 		{
 			Log::Write( LogLevel_Info, nodeId, "UPDATE_STATE_NODE_INFO_RECEIVED from node %d", nodeId );
-			if( Node* node = GetNodeUnsafe( nodeId ) )
+			if( node )
 			{
 				node->UpdateNodeInfo( &_data[8], _data[4] - 3 );
 				// Make the device alive when we receive node info from it
