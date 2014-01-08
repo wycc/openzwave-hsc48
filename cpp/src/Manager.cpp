@@ -3062,6 +3062,7 @@ bool Manager::RemoveWatcher
 			m_notificationMutex->Unlock();
 			return true;
 		}
+		it++;
 	}
 
 	m_notificationMutex->Unlock();
