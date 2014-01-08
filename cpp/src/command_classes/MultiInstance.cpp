@@ -400,10 +400,16 @@ void MultiInstance::HandleMultiChannelCapabilityReport
 	uint32 const _length
 )
 {
+	bool dynamic = ((_data[1] & 0x80)!=0);
+	/* if you having problems with Dynamic Devices not correctly
+         * updating the commandclasses, see this email thread:
+	 * https://groups.google.com/d/topic/openzwave/IwepxScRAVo/discussion
+	 */
+	if (!dynamic && m_endPointCommandClasses.size() > 0)
+		return;
 	if( Node* node = GetNodeUnsafe() )
 	{
 		uint8 endPoint = _data[1] & 0x7f;
-		bool dynamic = ((_data[1] & 0x80)!=0);
 
 		Log::Write( LogLevel_Info, GetNodeId(), "Received MultiChannelCapabilityReport from node %d for endpoint %d", GetNodeId(), endPoint );
 		Log::Write( LogLevel_Info, GetNodeId(), "    Endpoint is%sdynamic, and is a %s", dynamic ? " " : " not ", node->GetEndPointDeviceClassLabel( _data[2], _data[3] ).c_str() );
