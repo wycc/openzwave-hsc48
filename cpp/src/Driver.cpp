@@ -2837,7 +2837,7 @@ void Driver::HandleSendDataRequest
 				}
 			}
 		}
-		else
+		else if (node != NULL)
 		{
 		  	// If WakeUpNoMoreInformation request succeeds, update our status
 		  	if( m_currentMsg->IsWakeUpNoMoreInformationCommand() )
