@@ -4789,18 +4789,18 @@ void Driver::ResetController
 	SendMsg( msg, MsgQueue_Command );
 	Log::Write( LogLevel_Info, "  No SUC, so we become SUC" );
 
-	msg = new Msg( "Enable SUC", m_nodeId, REQUEST, FUNC_ID_ZW_ENABLE_SUC, false );
+	msg = new Msg( "Enable SUC", 0xff, REQUEST, FUNC_ID_ZW_ENABLE_SUC, false );
 	msg->Append( 1 );
 	msg->Append( SUC_FUNC_BASIC_SUC );			// SUC
 	msg->Append( SUC_FUNC_NODEID_SERVER );		// SIS
-	SendMsg( msg, MsgQueue_Send );
+	SendMsg( msg, MsgQueue_Command );
 
-	msg = new Msg( "Set SUC node ID", m_nodeId, REQUEST, FUNC_ID_ZW_SET_SUC_NODE_ID, false );
+	msg = new Msg( "Set SUC node ID", 0xff, REQUEST, FUNC_ID_ZW_SET_SUC_NODE_ID, false );
 	msg->Append( m_nodeId );
 	msg->Append( 1 );								// TRUE, we want to be SUC/SIS
 	msg->Append( 0 );								// no low power
 	msg->Append( SUC_FUNC_NODEID_SERVER );
-	SendMsg( msg, MsgQueue_Send );
+	SendMsg( msg, MsgQueue_Command );
 }
 
 //-----------------------------------------------------------------------------
