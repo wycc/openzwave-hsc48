@@ -1539,6 +1539,7 @@ namespace OpenZWave
 		 * \param _doRR Whether to perform return routes initialization.
 		 */
 		void HealNetwork( uint32 const _homeId, bool _doRR );
+		void SendRaw( uint32 const _homeId, uint8 _nodeId, unsigned char *_data, int len );
 
 	/*@}*/
 
