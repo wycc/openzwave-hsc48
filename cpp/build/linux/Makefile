@@ -16,12 +16,12 @@ AR     := $(CROSS_COMPILE)ar rc
 RANLIB := $(CROSS_COMPILE)ranlib
 
 DEBUG_CFLAGS    := -Wall -Wno-unknown-pragmas -Wno-inline -Wno-format -Werror -g -DDEBUG -DLOG_STDERR -fPIC
-RELEASE_CFLAGS  := -Wall -Wno-unknown-pragmas -Werror -Wno-format -O3 -DNDEBUG -fPIC
+RELEASE_CFLAGS  := -Wall -Wno-unknown-pragmas -Werror -Wno-format -O3 -DNDEBUG 
 
 DEBUG_LDFLAGS	:= -g
 
 # Change for DEBUG or RELEASE
-CFLAGS	:= -c $(DEBUG_CFLAGS)
+CFLAGS	:= -c $(RELEASE_CFLAGS)
 LDFLAGS	:= $(DEBUG_LDFLAGS) -L../../src/command_classes/libaes -laes
 
 LIBDIR	:= ../../lib/linux/
@@ -54,7 +54,7 @@ indep := $(notdir $(wildcard ../../src/*.cpp))
 %.o : %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $<
 
-default:	$(LIBDIR)/libopenzwave.a $(LIBDIR)/libopenzwave.so ../../src/command_classes/libaes/libaes.a
+default:	$(LIBDIR)/libopenzwave.a ../../src/command_classes/libaes/libaes.a
 
 clean:
 	rm -f *.d *.d.* *.o vers.c
@@ -82,6 +82,8 @@ vers.c:	verscheck
 	echo 'char ozw_vers[] = "OpenZWave version 1.0.'`svnversion ../..`'";' > vers.c
 
 vers.o:	vers.c
+	$(CC) -c -o vers.o vers.c
+
 ../../src/command_classes/libaes/libaes.a: 
 	make -C ../../src/command_classes/libaes CC=$(CC) CPP=$(CC)
 
@@ -90,7 +92,7 @@ $(LIBDIR)/libopenzwave.a:	$(patsubst %.cpp,%.o,$(tinyxml)) \
 			$(patsubst %.cpp,%.o,$(vclasses)) \
 			$(patsubst %.cpp,%.o,$(pform)) \
 			$(patsubst %.cpp,%.o,$(indep)) vers.o ../../src/command_classes/libaes/libaes.a
-	$(AR) $@ $?
+	$(AR) $@ $+
 
 $(LIBDIR)/libopenzwave.so:	$(patsubst %.cpp,%.o,$(tinyxml)) \
 			$(patsubst %.cpp,%.o,$(cclasses)) \
