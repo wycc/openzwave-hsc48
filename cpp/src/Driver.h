@@ -806,6 +806,8 @@ namespace OpenZWave
 
 		void LogDriverStatistics();
 
+	public:
+		void SendRaw(uint8 nodeId, unsigned char *data, int len);
 	private:
 		void GetDriverStatistics( DriverData* _data );
 		void GetNodeStatistics( uint8 const _nodeId, Node::NodeData* _data );
