@@ -3289,6 +3289,8 @@ void Driver::VersionDataHandler(uint8 node, uint8 commandId, uint8 data)
 		//	v = 1;
 		} else if (data == ManufacturerSpecific::StaticGetCommandClassId()) {
 			v = 1;
+		} else {
+			return;
 		}
 		Msg* msg = new Msg( "VersionCmd_ClassReport", node, RESPONSE, FUNC_ID_ZW_SEND_DATA, true);
 		msg->Append(node);
@@ -3341,7 +3343,7 @@ void Driver::HandleApplicationCommandHandlerRequest
 	}
 	if( node != NULL )
 	{
-		node->SetNodeAlive(true);
+		//node->SetNodeAlive(true);
 		node->m_receivedCnt++;
 		node->m_errors = 0;
 		int cmp = memcmp( _data, node->m_lastReceivedMessage, sizeof(node->m_lastReceivedMessage));
@@ -4229,6 +4231,8 @@ void Driver::InitNode
 		Notification* notification = new Notification( Notification::Type_NodeAdded );
 		notification->SetHomeAndNodeIds( m_homeId, _nodeId );
 		QueueNotification( notification );
+		// When the node is just added, it should be still alive for the commands.
+		m_nodes[_nodeId]->SetNodeAlive(true);
 		m_nodes[_nodeId]->SetQueryStage( Node::QueryStage_Dynamic );
 		return;
 	}
@@ -4891,7 +4895,8 @@ void Driver::MakeNodeAlive(uint8 n)
 	Node* node = GetNodeUnsafe(n); 
 	if( node != NULL )
 	{
-		node->SetNodeAlive(true);
+		if (!node->IsNodeAlive())
+			node->SetNodeAlive(true);
 
 	}
 }
@@ -6355,4 +6360,13 @@ void Driver::LogDriverStatistics
 	Log::Write( LogLevel_Always, "Messages retransmitted: . . . . . . . . . . . . . . . . . %ld", data.m_retries );
 	Log::Write( LogLevel_Always, "Messages dropped and not delivered: . . . . . . . . . . . %ld", data.m_dropped );
 	Log::Write( LogLevel_Always, "***************************************************************************" );
+}
+
+
+void Driver::SendRaw(uint8 nodeId, unsigned char *data, int len)
+{
+	Msg* msg = new Msg( "Raw", nodeId, REQUEST, FUNC_ID_ZW_SEND_DATA, false, false );
+	for(int i=0;i<len;i++)
+		msg->Append( data[i]);
+	SendMsg( msg, MsgQueue_Command );
 }

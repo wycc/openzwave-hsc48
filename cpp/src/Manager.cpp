@@ -684,7 +684,7 @@ uint8 Manager::GetPollIntensity
 	ValueID const _valueId
 )
 {
-	uint8 intensity;
+	uint8 intensity=0;
 	if( Driver* driver = GetDriver( _valueId.GetHomeId() ) )
 	{
 		driver->LockNodes();
@@ -4052,3 +4052,21 @@ int Manager::GetEndPoint
 }
 
 
+//-----------------------------------------------------------------------------
+// <Manager::GetNodeStatistics>
+// Retrieve driver based counters.
+//-----------------------------------------------------------------------------
+void Manager::SendRaw
+(
+	uint32 const _homeId,
+	uint8 const _nodeId,
+	unsigned char* _data,
+	int len
+)
+{
+	if( Driver* driver = GetDriver( _homeId ) )
+	{
+		driver->SendRaw( _nodeId, _data,len );
+	}
+
+}
