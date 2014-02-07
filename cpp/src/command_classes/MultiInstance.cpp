@@ -405,8 +405,8 @@ void MultiInstance::HandleMultiChannelCapabilityReport
          * updating the commandclasses, see this email thread:
 	 * https://groups.google.com/d/topic/openzwave/IwepxScRAVo/discussion
 	 */
-	if (!dynamic && m_endPointCommandClasses.size() > 0)
-		return;
+	//if (!dynamic && m_endPointCommandClasses.size() > 0)
+	//	return;
 	if( Node* node = GetNodeUnsafe() )
 	{
 		uint8 endPoint = _data[1] & 0x7f;
