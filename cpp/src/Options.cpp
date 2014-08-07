@@ -94,7 +94,7 @@ Options* Options::Create
 		s_instance->AddOptionBool(		"NotifyTransactions",		false );					// Notifications when transaction complete is reported.
 		s_instance->AddOptionString(	"Interface",				string(""),		true );		// Identify the serial port to be accessed (TODO: change the code so more than one serial port can be specified and HID)
 		s_instance->AddOptionBool(		"SaveConfiguration",		true );						// Save the XML configuration upon driver close.
-		s_instance->AddOptionInt(		"DriverMaxAttempts",		0);
+		s_instance->AddOptionInt(		"DriverMaxAttempts",		2);
 
 		s_instance->AddOptionInt(		"PollInterval",				30000);						// 30 seconds (can easily poll 30 values in this time; ~120 values is the effective limit for 30 seconds)
 		s_instance->AddOptionBool(		"IntervalBetweenPolls",		false );					// if false, try to execute the entire poll list within the PollInterval time frame

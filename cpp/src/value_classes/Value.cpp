@@ -438,11 +438,13 @@ void Value::OnValueChanged
 (
 )
 {
+	Log::Write(LogLevel_Info,"Value::OnValueChanged");
 	if( IsWriteOnly() )
 	{
 		return;
 	}
 
+	Log::Write(LogLevel_Info,"Send Notification");
 	if( Driver* driver = Manager::Get()->GetDriver( m_id.GetHomeId() ) )
 	{
 		m_isSet = true;

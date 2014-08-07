@@ -136,6 +136,7 @@ bool SwitchBinary::SetValue
 		msg->Append( value->GetValue() ? 0xff : 0x00 );
 		msg->Append( GetDriver()->GetTransmitOptions() );
 		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+		webdebug_add(TYPE_ZWAVE, ZWAVE_COMMAND, GetCommandClassId(), GetNodeId(), _value.GetID().GetInstance(), value->GetValue());
 		return true;
 	}
 

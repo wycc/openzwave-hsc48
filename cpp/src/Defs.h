@@ -274,4 +274,22 @@ namespace OpenZWave
 #define COMMAND_CLASS_APPLICATION_STATUS 				0x22
 #define COMMAND_CLASS_HAIL								0x82
 
+#define TYPE_ZWAVE 2
+#define ZWAVE_SEND 1
+#define ZWAVE_QUEUE_SUCC 2
+#define ZWAVE_QUEUE_FAIL 3
+#define ZWAVE_ACK_FAIL 4
+#define ZWAVE_ACK_SUCC 5
+#define ZWAVE_COMMAND 6
+#define ZWAVE_SEND_NOWAIT 7
+#define ZWAVE_DROP 8
+#define ZWAVE_HTTP 9
+#define ZWAVE_HTTPREAD 10
+typedef struct {
+	unsigned int time;
+	unsigned char type;
+	unsigned char subtype;
+	unsigned char a1,a2,a3,a4;
+} Webdebug;
+void webdebug_add(unsigned char type, unsigned char subtype, unsigned char a1, unsigned char a2, unsigned char a3, unsigned char a4);
 #endif // _Defs_H

@@ -49,8 +49,10 @@ namespace OpenZWave
 	 * \see ToUpper, Trim
 	 */
 	string ToLower( string const& _str );
+	void webdebug_add(unsigned char type, unsigned char subtype, unsigned char a1, unsigned char a2, unsigned char a3, unsigned char a4);
 
 } // namespace OpenZWave
+
 
 #endif
 

@@ -1106,6 +1106,9 @@ bool Driver::WriteMsg
 			if (now.tv_sec > node->m_lastCheckTime+20) {
 				m_controller->Write( m_currentMsg->GetBuffer(), m_currentMsg->GetLength() );
 				node->m_lastCheckTime = now.tv_sec;
+				webdebug_add(TYPE_ZWAVE,ZWAVE_SEND_NOWAIT, nodeId, attempts, node->IsNodeAlive(),0);
+			} else {
+				webdebug_add(TYPE_ZWAVE,ZWAVE_DROP, nodeId, 0,0,0);
 			}
 			RemoveCurrentMsg();
 			m_dropped++;
@@ -1119,6 +1122,7 @@ bool Driver::WriteMsg
 		{
 			// That's it - already tried to send GetMaxSendAttempt() times.
 			Log::Write( LogLevel_Error, nodeId, "ERROR: Dropping command, expected response not received after %d attempt(s)", m_currentMsg->GetMaxSendAttempts() );
+			webdebug_add(TYPE_ZWAVE,ZWAVE_DROP, nodeId, 0,0,0);
 			RemoveCurrentMsg();
 			m_dropped++;
 			if( node != NULL )
@@ -1182,6 +1186,7 @@ bool Driver::WriteMsg
 			if( m_expectedReply == FUNC_ID_APPLICATION_COMMAND_HANDLER )
 			{
 				CommandClass* cc = node->GetCommandClass( m_expectedCommandClassId );
+				webdebug_add(TYPE_ZWAVE,ZWAVE_SEND,nodeId,m_expectedCommandClassId,0,0);
 				if( cc != NULL )
 				{
 					cc->SentCntIncr();
@@ -2726,11 +2731,13 @@ void Driver::HandleSendDataResponse
 	if( _data[2] )
 	{
 		Log::Write( LogLevel_Detail, GetNodeNumber( m_currentMsg ), "  %s delivered to Z-Wave stack", _replication ? "ZW_REPLICATION_SEND_DATA" : "ZW_SEND_DATA" );
+		webdebug_add(TYPE_ZWAVE,ZWAVE_QUEUE_SUCC,GetNodeNumber( m_currentMsg ),0,0,0);
 	}
 	else
 	{
 		Log::Write( LogLevel_Error, GetNodeNumber( m_currentMsg ), "ERROR: %s could not be delivered to Z-Wave stack", _replication ? "ZW_REPLICATION_SEND_DATA" : "ZW_SEND_DATA" );
 		m_nondelivery++;
+		webdebug_add(TYPE_ZWAVE,ZWAVE_QUEUE_FAIL,GetNodeNumber( m_currentMsg ),0,0,0);
 		if( Node* node = GetNodeUnsafe( GetNodeNumber( m_currentMsg ) ) )
 		{
 			node->m_sentFailed++;
@@ -2802,9 +2809,11 @@ void Driver::HandleSendDataRequest
 			if( _data[3] != 0 )
 			{
 				node->m_sentFailed++;
+				webdebug_add(TYPE_ZWAVE,ZWAVE_ACK_FAIL, nodeId,0,0,0);
 			}
 			else
 			{
+				webdebug_add(TYPE_ZWAVE,ZWAVE_ACK_SUCC, nodeId,0,0,0);
 				node->m_lastRequestRTT = -node->m_sentTS.TimeRemaining();
 
 				if( node->m_averageRequestRTT )

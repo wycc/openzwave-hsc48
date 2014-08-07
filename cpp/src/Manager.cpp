@@ -1371,7 +1371,7 @@ bool Manager::IsNodeFailed
 	if( Driver* driver = GetDriver( _homeId ) )
 	{
 		driver->LockNodes();
-	        if( Node* node = driver->GetNode( _nodeId ) )
+	        if( Node* node = driver->GetNodeUnsafe( _nodeId ) )
 	        {
 			result = !node->IsNodeAlive();
 		}

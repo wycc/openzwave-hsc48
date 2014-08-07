@@ -45,7 +45,8 @@ enum ConfigurationCmd
 {
 	ConfigurationCmd_Set	= 0x04,
 	ConfigurationCmd_Get	= 0x05,
-	ConfigurationCmd_Report	= 0x06
+	ConfigurationCmd_Report	= 0x06,
+	ConfigurationCmd_BulkSet= 0x07
 };
 
 //-----------------------------------------------------------------------------
@@ -73,6 +74,7 @@ bool Configuration::HandleMsg
 
 		if ( Value* value = GetValue( 1, parameter ) ) 
 		{
+			Log::Write(LogLevel_Info,"update values");
 			switch ( value->GetID().GetType() ) 
 			{
 				case ValueID::ValueType_Bool:
@@ -117,6 +119,7 @@ bool Configuration::HandleMsg
 			char label[16];
 			snprintf( label, 16, "Parameter #%d", parameter );
 
+			Log::Write(LogLevel_Info,"add new values");
 			// Create a new value
 			if( Node* node = GetNodeUnsafe() )
 			{

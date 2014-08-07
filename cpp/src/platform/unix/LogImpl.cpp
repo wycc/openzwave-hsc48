@@ -33,7 +33,6 @@
 #include "LogImpl.h"
 
 using namespace OpenZWave;
-
 //-----------------------------------------------------------------------------
 //	<LogImpl::LogImpl>
 //	Constructor

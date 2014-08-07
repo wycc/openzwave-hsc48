@@ -1324,7 +1324,7 @@ void Node::SetNodeAlive
 
 	if( _isAlive )
 	{
-		Log::Write( LogLevel_Error, m_nodeId, "ERROR: node revived" );
+		Log::Write( LogLevel_Error, m_nodeId, "ERROR: node revived stage=%d live=%d", m_queryStage,_isAlive);
 		m_nodeAlive = true;
 		m_errors = 0;
 		if( m_queryStage != Node::QueryStage_Complete )

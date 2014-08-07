@@ -256,6 +256,7 @@ bool SwitchMultilevel::SetValue
 {
 	bool res = false;
 	uint8 instance = _value.GetID().GetInstance();
+	Log::Write(LogLevel_Info,"index = %d value = %d", _value.GetID().GetIndex(), (static_cast<ValueByte const*>(&_value))->GetValue());
 
 	switch( _value.GetID().GetIndex() )
 	{

@@ -247,6 +247,7 @@ bool Basic::SetValue
 		msg->Append( value->GetValue() );
 		msg->Append( GetDriver()->GetTransmitOptions() );
 		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+		webdebug_add(TYPE_ZWAVE, ZWAVE_COMMAND, GetCommandClassId(), GetNodeId(), _value.GetID().GetInstance(), value->GetValue());
 		return true;
 	}
 

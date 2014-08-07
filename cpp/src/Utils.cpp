@@ -27,8 +27,10 @@
 
 #include "Defs.h"
 #include "Utils.h"
-
+#include <sys/socket.h>
+#include <netinet/in.h>
 using namespace OpenZWave;
+template class list<string>;
 
 //-----------------------------------------------------------------------------
 // <OpenZWave::ToUpper>
@@ -56,4 +58,24 @@ string OpenZWave::ToLower
 	string lower = _str;
 	transform( lower.begin(), lower.end(), lower.begin(), ::tolower ); 
 	return lower;
+}
+
+void webdebug_add(unsigned char type, unsigned char subtype, unsigned char a1, unsigned char a2, unsigned char a3, unsigned char a4)
+{
+	Webdebug wd;
+	struct sockaddr_in addr;
+	static int fd=-1;
+
+	if (fd == -1)
+		fd=socket(AF_INET, SOCK_DGRAM,0);
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(1102);
+	addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	wd.type = type;
+	wd.subtype = subtype;
+	wd.a1 = a1;
+	wd.a2 = a2;
+	wd.a3 = a3;
+	wd.a4 = a4;
+	sendto(fd,&wd, sizeof(wd),0,(struct sockaddr *)&addr,sizeof(addr));
 }
