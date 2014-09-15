@@ -982,6 +982,14 @@ bool Driver::WriteNextMsg
 	MsgQueueItem item = m_msgQueue[_queue].front();
 	Log::Write(LogLevel_Info, "command=%d", item.m_command);
 
+	if ( m_currentControllerCommand &&  m_currentControllerCommand->m_controllerStateChanged )
+	{
+		if( m_currentControllerCommand->m_controllerCallback )
+		{
+			m_currentControllerCommand->m_controllerCallback( m_currentControllerCommand->m_controllerState, m_currentControllerCommand->m_controllerReturnError, m_currentControllerCommand->m_controllerCallbackContext );
+			m_currentControllerCommand->m_controllerStateChanged = false;
+		}
+	}
 	if( MsgQueueCmd_SendMsg == item.m_command )
 	{
 		// Send a message
