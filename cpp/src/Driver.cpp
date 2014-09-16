@@ -981,7 +981,7 @@ bool Driver::WriteNextMsg
 	m_sendMutex->Lock();
 	MsgQueueItem item = m_msgQueue[_queue].front();
 	Log::Write(LogLevel_Info, "command=%d", item.m_command);
-
+#if 0
 	if ( m_currentControllerCommand &&  m_currentControllerCommand->m_controllerStateChanged )
 	{
 		if( m_currentControllerCommand->m_controllerCallback )
@@ -990,6 +990,7 @@ bool Driver::WriteNextMsg
 			m_currentControllerCommand->m_controllerStateChanged = false;
 		}
 	}
+#endif	
 	if( MsgQueueCmd_SendMsg == item.m_command )
 	{
 		// Send a message
