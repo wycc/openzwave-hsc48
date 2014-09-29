@@ -92,7 +92,7 @@ namespace OpenZWave
 #define MAX_MAX_TRIES		7	// Don't exceed this retry limit
 #define ACK_TIMEOUT	1000		// How long to wait for an ACK
 #define BYTE_TIMEOUT	150
-#define RETRY_TIMEOUT	4000		// Retry send after 40 seconds
+#define RETRY_TIMEOUT	2000		// Retry send after 40 seconds
 
 #define SOF												0x01
 #define ACK												0x06
