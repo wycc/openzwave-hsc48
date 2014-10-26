@@ -285,6 +285,7 @@ namespace OpenZWave
 #define ZWAVE_DROP 8
 #define ZWAVE_HTTP 9
 #define ZWAVE_HTTPREAD 10
+#define ZWAVE_COMMAND_RAW 11
 typedef struct {
 	unsigned int time;
 	unsigned char type;

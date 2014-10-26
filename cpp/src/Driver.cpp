@@ -51,6 +51,7 @@
 #include "NoOperation.h"
 #include "Version.h"
 #include "Basic.h"
+#include "MultiInstance.h"
 
 #include "ValueID.h"
 #include "Value.h"
@@ -3401,6 +3402,10 @@ void Driver::HandleApplicationCommandHandlerRequest
 		{
 			node->SetNodeAlive( true );
 		}
+	}
+	webdebug_add(TYPE_ZWAVE, ZWAVE_COMMAND_RAW, nodeId,classId, commandId,_data[7]);
+	if (MultiInstance::StaticGetCommandClassId() == classId) {
+		webdebug_add(TYPE_ZWAVE, ZWAVE_COMMAND_RAW, _data[8],_data[9],_data[10],_data[11]);
 	}
 	if (Basic::StaticGetCommandClassId() == classId) {
 		// Treat this as BASIC_REPORT
