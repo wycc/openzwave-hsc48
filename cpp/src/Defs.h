@@ -88,7 +88,7 @@ namespace OpenZWave
 
 #endif
 
-#define MAX_TRIES		1	// Retry sends up to 3 times
+#define MAX_TRIES		2	// Retry sends up to 3 times
 #define MAX_MAX_TRIES		7	// Don't exceed this retry limit
 #define ACK_TIMEOUT	1000		// How long to wait for an ACK
 #define BYTE_TIMEOUT	150
@@ -286,6 +286,7 @@ namespace OpenZWave
 #define ZWAVE_HTTP 9
 #define ZWAVE_HTTPREAD 10
 #define ZWAVE_COMMAND_RAW 11
+#define ZWAVE_DEBUG 12
 typedef struct {
 	unsigned int time;
 	unsigned char type;
