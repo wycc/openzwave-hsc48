@@ -1130,7 +1130,15 @@ bool Driver::WriteMsg
 		//    ID = ZWave Node ID
 		// Each device must check if the ID match itse ZWave ID. If yes, it will parse the command and execute the 
 		// Appropriate command handler for it.
-		m_485->Write(m_currentMsg->GetBuffer(), m_currentMsg->GetLength());
+		uint8 buf[64];
+
+		buf[0] = 0xC0;
+		buf[1] = nodeId;
+		buf[2] = m_currentMsg->GetLength()+4;
+		buf[3] = 0x46;
+		memcpy(buf+4,m_currentMsg->GetBuffer(), m_currentMsg->GetLength());
+		buf[3+m_currentMsg->GetBuffer()] = 0xC1;
+		m_485->Write( buf, 5+m_currentMsg->GetBuffer());
 #endif
 
 		if( node != NULL && !node->IsNodeAlive() )
