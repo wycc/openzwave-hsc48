@@ -38,7 +38,7 @@
 #include "TimeStamp.h"
 #include "Event.h"
 #include "Mutex.h"
-
+#define SUPPORT_485_REPEATER
 namespace OpenZWave
 {
 	class Msg;
@@ -46,6 +46,7 @@ namespace OpenZWave
 	class Event;
 	class Mutex;
 	class Controller;
+	class SerialController;
 	class Thread;
 	class ControllerReplication;
 	class Notification;
@@ -243,6 +244,9 @@ namespace OpenZWave
 		ControllerInterface			m_controllerInterfaceType;						// Specifies the controller's hardware interface
 		string					m_controllerPath;							// name or path used to open the controller hardware.
 		Controller*				m_controller;								// Handles communications with the controller hardware.
+#ifdef SUPPORT_485_REPEATER		
+		SerialController*			m_485;									// 485 backup link
+#endif
 		uint32					m_homeId;									// Home ID of the Z-Wave controller.  Not valid until the DriverReady notification has been received.
 		
 		string					m_libraryVersion;							// Verison of the Z-Wave Library used by the controller.

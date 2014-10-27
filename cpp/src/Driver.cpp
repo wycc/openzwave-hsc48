@@ -215,6 +215,10 @@ Driver::Driver
 	Options::Get()->GetOptionAsBool( "NotifyTransactions", &m_notifytransactions );
 	Options::Get()->GetOptionAsInt( "PollInterval", &m_pollInterval );
 	Options::Get()->GetOptionAsBool( "IntervalBetweenPolls", &m_bIntervalBetweenPolls );
+#ifdef SUPPORT_485_REPEATER		
+	m_485 = new SerialController();
+	m_485->SetSignalThreshold( 1 );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -254,6 +258,10 @@ Driver::~Driver
 
 	m_controller->Close();
 	m_controller->Release();
+#ifdef SUPPORT_485_REPEATER		
+	m_485->Close();
+	m_485->Release();
+#endif
 
 	if( m_currentMsg != NULL )
 	{
@@ -495,6 +503,13 @@ bool Driver::Init
 	 	Log::Write( LogLevel_Warning, "WARNING: Failed to init the controller (attempt %d)", _attempts );
 		return false;
 	}
+#ifdef SUPPORT_485_REPEATER		
+	if( !m_485->Open( "/dev/ttyUSB0" ) )
+	{
+	 	Log::Write( LogLevel_Warning, "WARNING: Failed to init the controller (attempt %d)", _attempts );
+		return false;
+	}
+#endif
 
 	// Controller opened successfully, so we need to start all the worker threads
 	m_pollThread->Start( Driver::PollThreadEntryPoint, this );
@@ -1107,6 +1122,17 @@ bool Driver::WriteMsg
 	Node* node = GetNode( nodeId );
 	if( attempts >= m_currentMsg->GetMaxSendAttempts() || (node != NULL && !node->IsNodeAlive() && !m_currentMsg->IsNoOperation()) )
 	{
+#ifdef SUPPORT_485_REPEATER		
+		// Send command via 485 here. We will send the 485 command via the 485 command sequence
+		// C0 ID LL 46 PP PP PP PP PP PP C1
+		//    PP = m_currentMsg->GetBuffer[]
+		//    LL = m_currentMsg->GetLength()+4
+		//    ID = ZWave Node ID
+		// Each device must check if the ID match itse ZWave ID. If yes, it will parse the command and execute the 
+		// Appropriate command handler for it.
+		m_485->Write(m_currentMsg->GetBuffer(), m_currentMsg->GetLength());
+#endif
+
 		if( node != NULL && !node->IsNodeAlive() )
 		{
 			Log::Write( LogLevel_Error, nodeId, "Node is dead. We send the message without waiting for the respose." );
@@ -1182,6 +1208,14 @@ bool Driver::WriteMsg
 
 	m_controller->Write( m_currentMsg->GetBuffer(), m_currentMsg->GetLength() );
 	m_writeCnt++;
+	uint8 *buf = m_currentMsg->GetBuffer();
+	if (m_currentMsg->GetLength() >= 7) {
+		if (buf[6] == 0x94) {
+			webdebug_add(TYPE_ZWAVE,ZWAVE_SEND,nodeId,buf[6],m_expectedReply,buf[13]);
+		} else {
+			webdebug_add(TYPE_ZWAVE,ZWAVE_SEND,nodeId,buf[6],m_expectedReply,buf[8]);
+		}
+	}
 
 	if( nodeId == 0xff )
 	{
@@ -1196,7 +1230,6 @@ bool Driver::WriteMsg
 			if( m_expectedReply == FUNC_ID_APPLICATION_COMMAND_HANDLER )
 			{
 				CommandClass* cc = node->GetCommandClass( m_expectedCommandClassId );
-				webdebug_add(TYPE_ZWAVE,ZWAVE_SEND,nodeId,m_expectedCommandClassId,0,0);
 				if( cc != NULL )
 				{
 					cc->SentCntIncr();
@@ -3397,6 +3430,10 @@ void Driver::HandleApplicationCommandHandlerRequest
 		else
 		{
 			node->m_receivedUnsolicited++;
+			node->SetQueryStage( Node::QueryStage_Dynamic );
+			webdebug_add(TYPE_ZWAVE, ZWAVE_DEBUG, 1,0,0,0);
+			Log::Write(LogLevel_Info, nodeId, "Unsolicited response");
+
 		}
 		if ( !node->IsNodeAlive() )
 		{
