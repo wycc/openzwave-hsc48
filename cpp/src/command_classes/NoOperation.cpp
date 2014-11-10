@@ -68,8 +68,9 @@ void NoOperation::Set
 	msg->Append( 2 );
 	msg->Append( GetCommandClassId() );
 	msg->Append( 0 );
-	if( _route )
-		msg->Append( GetDriver()->GetTransmitOptions() );
+	if( _route ) 
+		//msg->Append( GetDriver()->GetTransmitOptions() );
+		msg->Append( TRANSMIT_OPTION_ACK | TRANSMIT_OPTION_EXPLORE);
 	else
 		msg->Append( TRANSMIT_OPTION_ACK | TRANSMIT_OPTION_NO_ROUTE );
 	GetDriver()->SendMsg( msg, _queue );
