@@ -166,16 +166,47 @@ bool SimpleAV::SetValue
 
 	Msg* msg = new Msg( "SimpleAV Set", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true );		
 	Log::Write(LogLevel_Info,"Index is %d instance %d", index,instance);
-	if (instance > 20) {
-		instance -= 20;
-		Log::Write(LogLevel_Info,"send to isnstance %d", instance+10);
-		msg->SetEndPoint( this, instance+10);
+	if (instance > 30) {
+		instance -= 30;
+		msg->SetEndPoint( this, instance );
 		msg->Append( GetNodeId() );
 		msg->Append( 8);
 		msg->Append(GetCommandClassId() );
 		msg->Append(SimpleAVCmd_Set);
 		msg->Append(m_seq++);
+		msg->Append(1);				// Key Up
 		msg->Append(0);
+		msg->Append(0);
+		msg->Append(index/256);
+		msg->Append(index%256);
+		msg->Append( GetDriver()->GetTransmitOptions() );
+		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+		return false;
+	} else if (instance > 20) {
+		instance -= 20;
+		msg->SetEndPoint( this, instance + 10 );
+		msg->Append( GetNodeId() );
+		msg->Append( 8);
+		msg->Append(GetCommandClassId() );
+		msg->Append(SimpleAVCmd_Set);
+		msg->Append(m_seq++);
+		msg->Append(0);				// Learn IR
+		msg->Append(0);
+		msg->Append(0);
+		msg->Append(index/256);
+		msg->Append(index%256);
+		msg->Append( GetDriver()->GetTransmitOptions() );
+		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+		return false;
+	} else if (instance > 10) {
+		Log::Write(LogLevel_Info,"send skeepalive to isnstance %d", instance);
+		msg->SetEndPoint( this, instance-10);
+		msg->Append( GetNodeId() );
+		msg->Append( 8);
+		msg->Append(GetCommandClassId() );
+		msg->Append(SimpleAVCmd_Set);
+		msg->Append(m_seq++);
+		msg->Append(2);
 		msg->Append(0);
 		msg->Append(0);
 		msg->Append(index/256);
@@ -213,6 +244,8 @@ void SimpleAV::CreateVars
 	// Create values at report
 	if( Node* node = GetNodeUnsafe() ) {
   		node->CreateValueByte( ValueID::ValueGenre_Basic, GetCommandClassId(), _instance, 0, "Send IR", "", false, false, 0, 0 );
+  		node->CreateValueByte( ValueID::ValueGenre_Basic, GetCommandClassId(), _instance+10, 0, "Send IR keepalive", "", false, false, 0, 0 );
   		node->CreateValueByte( ValueID::ValueGenre_Basic, GetCommandClassId(), _instance+20, 255, "Learn IR", "", false, false, 0, 0 );
+  		node->CreateValueByte( ValueID::ValueGenre_Basic, GetCommandClassId(), _instance+30, 0, "Send IR release", "", false, false, 0, 0 );
 	}
 }
