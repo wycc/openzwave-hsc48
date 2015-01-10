@@ -69,6 +69,7 @@ namespace OpenZWave
 		uint8						m_mapping;
 		bool						m_ignoreMapping;
 		bool						m_setAsReport;
+		bool						m_has485;
 	};
 
 } // namespace OpenZWave

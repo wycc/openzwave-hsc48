@@ -235,11 +235,13 @@ namespace OpenZWave
 		/**
 		 *  Lock the nodes so no other thread can modify them.
 		 */
-		void LockNodes();
+		void LockNodes_() { m_nodeMutex->Lock();}
+		void LockNodes() { m_nodeMutex->Lock();}
 		/**
 		 *  Release the lock on the nodes so other threads can modify them.
 		 */
-		void ReleaseNodes();
+		void ReleaseNodes_() { m_nodeMutex->Unlock();}
+		void ReleaseNodes() { m_nodeMutex->Unlock();}
 
 		ControllerInterface			m_controllerInterfaceType;						// Specifies the controller's hardware interface
 		string					m_controllerPath;							// name or path used to open the controller hardware.
@@ -275,7 +277,9 @@ namespace OpenZWave
 	//-----------------------------------------------------------------------------
 	private:
 		bool ReadMsg();
+		bool Read485(bool wait=false);
 		void ProcessMsg( uint8* _data );
+		void Process485( uint8* _data,int len );
 
 		void HandleGetVersionResponse( uint8* _data );
 		void HandleGetRandomResponse( uint8* _data );
@@ -625,6 +629,7 @@ namespace OpenZWave
 		 */
 		bool WriteNextMsg( MsgQueue const _queue );							// Extracts the first message from the queue, and makes it the current one.
 		bool WriteMsg( string const str);									// Sends the current message to the Z-Wave network
+		void Send485(int nodeId,Msg *msg,MsgQueue const _queue);
 		void RemoveCurrentMsg();											// Deletes the current message and cleans up the callback etc states
 		bool MoveMessagesToWakeUpQueue(	uint8 const _targetNodeId, bool const _move );		// If a node does not respond, and is of a type that can sleep, this method is used to move all its pending messages to another queue ready for when it mext wakes up.
 		bool HandleErrorResponse( uint8 const _error, uint8 const _nodeId, char const* _funcStr, bool _sleepCheck = false );									    // Handle data errors and process consistently. If message is moved to wake-up queue, return true.

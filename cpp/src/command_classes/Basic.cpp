@@ -59,7 +59,8 @@ Basic::Basic
 	CommandClass( _homeId, _nodeId ),
 	m_mapping( 0 ),
 	m_ignoreMapping( false ),
-	m_setAsReport( true )
+	m_setAsReport( true ),
+	m_has485(false)
 {
 }
 
@@ -78,6 +79,12 @@ void Basic::ReadXML
 	if( str )
 	{
 		m_ignoreMapping = !strcmp( str, "true");
+	}
+
+	str = _ccElement->Attribute("has485");
+	if( str )
+	{
+		m_has485 = !strcmp( str, "true");
 	}
 
 	int32 intVal;
@@ -123,6 +130,10 @@ void Basic::WriteXML
 	{
 		_ccElement->SetAttribute( "setasreport", "true" );
 	}
+	if( m_has485)
+	{
+		_ccElement->SetAttribute( "has485", "true" );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -162,7 +173,11 @@ bool Basic::RequestValue
 	msg->Append( GetCommandClassId() );
 	msg->Append( BasicCmd_Get );
 	msg->Append( GetDriver()->GetTransmitOptions() );
-	GetDriver()->SendMsg( msg, _queue );
+	if (m_has485) {
+		GetDriver()->Send485( GetNodeId(), msg, _queue );
+	} else {
+		GetDriver()->SendMsg( msg, _queue );
+	}
 	return true;
 }
 
@@ -233,11 +248,11 @@ bool Basic::SetValue
 	Value const& _value
 )
 {
+	Log::Write(LogLevel_Info,"Basic set");
 	if( ValueID::ValueType_Byte == _value.GetID().GetType() )
 	{
 		ValueByte const* value = static_cast<ValueByte const*>(&_value);
-	
-		Log::Write( LogLevel_Info, GetNodeId(), "Basic::Set - Setting node %d to level %d", GetNodeId(), value->GetValue() );
+		Log::Write(LogLevel_Info,"send a basic value out");
 		Msg* msg = new Msg( "Basic Set", GetNodeId(), REQUEST, FUNC_ID_ZW_SEND_DATA, true );		
 		msg->SetInstance( this, _value.GetID().GetInstance() );
 		msg->Append( GetNodeId() );
@@ -246,9 +261,16 @@ bool Basic::SetValue
 		msg->Append( BasicCmd_Set );
 		msg->Append( value->GetValue() );
 		msg->Append( GetDriver()->GetTransmitOptions() );
-		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+		if (m_has485) {
+			GetDriver()->Send485(GetNodeId(),msg,Driver::MsgQueue_Send);
+			return true;
+		} else {
+			GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
+			return true;
+		}
 		webdebug_add(TYPE_ZWAVE, ZWAVE_COMMAND, GetCommandClassId(), GetNodeId(), _value.GetID().GetInstance(), value->GetValue());
-		return true;
+	} else {
+		Log::Write(LogLevel_Info,"Type error %d", _value.GetID().GetType());
 	}
 
 	return false;

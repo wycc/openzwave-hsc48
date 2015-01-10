@@ -59,7 +59,6 @@
 #include <sys/time.h>
 
 #include <algorithm>
-
 using namespace OpenZWave;
 
 // Version numbering for saved configurations. Any change that will invalidate
@@ -71,6 +70,9 @@ using namespace OpenZWave;
 // 03: 08-04-2011 - Changed command class instance handling for non-sequential MultiChannel endpoints.
 //
 uint32 const c_configVersion = 3;
+
+#define LockNodes() /*Log::Write(LogLevel_Info,"Lock at %d" , __LINE__);*/ LockNodes_(); 
+#define ReleaseNodes() /*Log::Write(LogLevel_Info,"UnLock at %d" , __LINE__);*/ ReleaseNodes_();
 
 static char const* c_libraryTypeNames[] =
 {
@@ -215,9 +217,14 @@ Driver::Driver
 	Options::Get()->GetOptionAsBool( "NotifyTransactions", &m_notifytransactions );
 	Options::Get()->GetOptionAsInt( "PollInterval", &m_pollInterval );
 	Options::Get()->GetOptionAsBool( "IntervalBetweenPolls", &m_bIntervalBetweenPolls );
-#ifdef SUPPORT_485_REPEATER		
+#ifdef SUPPORT_485_REPEATER
 	m_485 = new SerialController();
+	m_485->SetBaud(9600);
 	m_485->SetSignalThreshold( 1 );
+	if( !m_485->Open( "/dev/tty485" ) )
+	{
+		Log::Write( LogLevel_Warning, "WARNING: Failed to init the 485 controller");
+	}
 #endif
 }
 
@@ -357,7 +364,7 @@ void Driver::DriverThreadProc
 		if( Init( attempts ) )
 		{
 			// Driver has been initialised
-			Wait* waitObjects[10];
+			Wait* waitObjects[11];
 			waitObjects[0] = _exitEvent;				// Thread must exit.
 			waitObjects[1] = m_notificationsEvent;			// Notifications waiting to be sent.
 			waitObjects[2] = m_controller;				// Controller has received data.
@@ -368,13 +375,14 @@ void Driver::DriverThreadProc
 			waitObjects[7] = m_queueEvent[MsgQueue_Send];		// Ordinary requests to be sent.
 			waitObjects[8] = m_queueEvent[MsgQueue_Query];		// Node queries are pending.
 			waitObjects[9] = m_queueEvent[MsgQueue_Poll];		// Poll request is waiting.
+			waitObjects[10] = m_485;					// 485 controller
 
 			TimeStamp retryTimeStamp;
 
 			while( true )
 			{
 				Log::Write( LogLevel_StreamDetail, "      Top of DriverThreadProc loop." );
-				uint32 count = 10;
+				uint32 count = 11;
 				int32 timeout = Wait::Timeout_Infinite;
 
 				// If we're waiting for a message to complete, we can only
@@ -382,7 +390,11 @@ void Driver::DriverThreadProc
 				if( m_waitingForAck || m_expectedCallbackId || m_expectedReply )
 				{
 					count = 3;
-					timeout = m_waitingForAck ? ACK_TIMEOUT : retryTimeStamp.TimeRemaining();
+					if (m_waitingForAck|| m_expectedCallbackId) {
+						timeout = m_waitingForAck ? ACK_TIMEOUT : retryTimeStamp.TimeRemaining();
+					} else {
+						timeout = REPLY_TIMEOUT;
+					}
 					if( timeout < 0 )
 					{
 						timeout = 0;
@@ -398,6 +410,7 @@ void Driver::DriverThreadProc
 				}
 
 				// Wait for something to do
+				Log::Write(LogLevel_Info,"Wait event timeout=%d ", timeout);
 				int32 res = Wait::Multiple( waitObjects, count, timeout );
 				Log::Write(LogLevel_Info,"Next action is %d m_expectedReply=%d m_expectedCallbackId=%d ", res, m_expectedReply, m_expectedCallbackId);
 				switch( res )
@@ -434,6 +447,13 @@ void Driver::DriverThreadProc
 					{
 						// Data has been received
 						ReadMsg();
+						break;
+					}
+					case 10:
+					{
+						m_sendMutex->Lock();
+						Read485();
+						m_sendMutex->Unlock();
 						break;
 					}
 					default:
@@ -503,13 +523,6 @@ bool Driver::Init
 	 	Log::Write( LogLevel_Warning, "WARNING: Failed to init the controller (attempt %d)", _attempts );
 		return false;
 	}
-#ifdef SUPPORT_485_REPEATER		
-	if( !m_485->Open( "/dev/ttyUSB0" ) )
-	{
-	 	Log::Write( LogLevel_Warning, "WARNING: Failed to init the controller (attempt %d)", _attempts );
-		return false;
-	}
-#endif
 
 	// Controller opened successfully, so we need to start all the worker threads
 	m_pollThread->Start( Driver::PollThreadEntryPoint, this );
@@ -829,28 +842,6 @@ Node* Driver::GetNode
 }
 
 //-----------------------------------------------------------------------------
-// <Driver::LockNodes>
-// Lock the nodes so that no other thread can modify them
-//-----------------------------------------------------------------------------
-void Driver::LockNodes
-(
-)
-{
-	m_nodeMutex->Lock();
-}
-
-//-----------------------------------------------------------------------------
-// <Driver::ReleaseNodes>
-// Unlock the nodes so that other threads can modify them
-//-----------------------------------------------------------------------------
-void Driver::ReleaseNodes
-(
-)
-{
-	m_nodeMutex->Unlock();
-}
-
-//-----------------------------------------------------------------------------
 //	Sending Z-Wave messages
 //-----------------------------------------------------------------------------
 
@@ -1077,11 +1068,15 @@ bool Driver::WriteNextMsg
 		}
 		else if( m_currentControllerCommand->m_controllerStateChanged )
 		{
+			Log::Write(LogLevel_Info,"m_currentControllerCommand->m_controllerCallback=%x", m_currentControllerCommand->m_controllerCallback);
 			if( m_currentControllerCommand->m_controllerCallback )
 			{
 				m_currentControllerCommand->m_controllerCallback( m_currentControllerCommand->m_controllerState, m_currentControllerCommand->m_controllerReturnError, m_currentControllerCommand->m_controllerCallbackContext );
 				m_currentControllerCommand->m_controllerStateChanged = false;
 			}
+			m_sendMutex->Lock();
+			m_queueEvent[_queue]->Reset();
+			m_sendMutex->Unlock();
 		}
 		else 
 		{
@@ -1096,6 +1091,171 @@ bool Driver::WriteNextMsg
 	return false;
 }
 
+//-----------------------------------------------------------------------------
+// <Driver::Read485>
+// Read data from the 485
+//-----------------------------------------------------------------------------
+bool Driver::Read485(bool wait)
+{
+	uint8 buffer[32];
+	uint8 zwavebuf[32];
+	unsigned char ID;
+	int retries=100;
+
+	m_485->SetSignalThreshold( 1 );
+	if (wait) {
+		while(1) {
+			int32 response = Wait::Single( m_485, 100 );
+			if (response < 0) {
+				Log::Write(LogLevel_Info,"read timeout 100ms");
+				return false;
+			}
+			if( !m_485->Read( buffer, 1 ) )
+			{
+				// Nothing to read
+				return false;
+			}
+			if (buffer[0] != 0xc0) {
+				Log::Write(LogLevel_Info,"Garbage byte %02x", buffer[0]);
+				retries--;
+				if (retries==0) return false;
+			} 
+			break;
+		}
+	} else {
+		if( !m_485->Read( buffer, 1 ) )
+		{
+			// Nothing to read
+			return false;
+		}
+		if (buffer[0] != 0xc0) {
+			Log::Write(LogLevel_Info,"Garbage byte %02x", buffer[0]);
+			return false;
+		} 
+	}
+	
+	m_485->SetSignalThreshold( 3 );
+	int32 response = Wait::Single( m_485, 10 );
+	if( response < 0 )
+	{
+		Log::Write( LogLevel_Warning, "WARNING: 10ms passed without finding the length byte...aborting frame read");
+		m_readAborts++;
+		m_485->SetSignalThreshold( 1 );
+		return false;
+	}
+
+	m_485->Read( &buffer[1], 3 );
+	ID = buffer[1];
+	if (buffer[3] != 0x66) {
+		return false;
+	}
+	m_485->SetSignalThreshold( buffer[2]-4 );
+	Log::Write(LogLevel_Info,"try to read %d bytes", buffer[2]-4);
+	if( Wait::Single( m_485, 100 ) < 0 )
+	{
+		Log::Write( LogLevel_Warning, "WARNING: 100ms passed without reading the rest of the frame...aborting frame read" );
+		m_readAborts++;
+		m_485->SetSignalThreshold( 1 );
+		return false;
+	}
+
+	m_485->Read( &buffer[4], buffer[2]-4 );
+	m_485->SetSignalThreshold( 1 );
+	memcpy(zwavebuf,buffer+4, buffer[2]-6);
+	Process485(buffer,buffer[2]);
+	return true;
+}
+
+void Driver::Process485(uint8 *s,int len)
+{
+	int i;
+	int nodeId;
+	char msg[128];
+	
+	strcpy(msg,"485:");
+	for(i=0;i<len;i++) {
+		char n[12];
+
+		snprintf(n,12,"%02x ", s[i]);
+		strcat(msg,n);
+	}
+	Log::Write(LogLevel_Info,msg);
+	nodeId = s[1];
+	Node* node = GetNodeUnsafe( nodeId );
+	if (node) {
+		int instance=0;
+		uint8 *payload=s+4;
+		len -= 4;
+
+		if (payload[0] == 0x60) {
+			if (payload[1] == 0x0d) {
+				instance = payload[2];
+				payload = payload + 4;
+				len -= 4;
+			} else if (payload[1] == 0x6) {
+				instance = payload[2];
+				payload = payload + 3;
+				len -= 3;
+			}
+		}
+		CommandClass* pCommandClass = node->GetCommandClass( payload[0] );
+		if (pCommandClass)
+			pCommandClass->HandleMsg( payload+1, len-1, instance );
+		else
+			Log::Write(LogLevel_Info,"Command class %d is not available", payload[0]);
+	} else {
+		Log::Write(LogLevel_Info,"Node %d is not avauilable" , nodeId);
+	}
+}
+//-----------------------------------------------------------------------------
+// <Driver::Send485>
+// Transmit the current message to the 485 controller
+//-----------------------------------------------------------------------------
+void Driver::Send485(int nodeId,Msg *msg, MsgQueue const _queue)
+{
+	m_sendMutex->Lock();
+	Log::Write(LogLevel_Info,"enter send");
+#ifdef SUPPORT_485_REPEATER		
+	// Send command via 485 here. We will send the 485 command via the 485 command sequence
+	// C0 ID LL 46 PP PP PP PP PP PP C1
+	//    PP = m_currentMsg->GetBuffer[]
+	//    LL = m_currentMsg->GetLength()+4
+	//    ID = ZWave Node ID
+	// Each device must check if the ID match itse ZWave ID. If yes, it will parse the command and execute the 
+	// Appropriate command handler for it.
+	msg->Finalize();
+	if (m_485) {
+		uint8 buf[64];
+		int retries=3;
+
+		buf[0] = 0xC0;
+		buf[1] = nodeId;
+		buf[2] = msg->GetLength()+4;
+		buf[3] = 0x46;
+		memcpy(buf+4,msg->GetBuffer(), msg->GetLength());
+		buf[4+msg->GetLength()] = 0xC1;
+		while(1) {
+			Log::Write(LogLevel_Info,"485 Send %d bytes", 5+msg->GetLength());
+			if (m_485->Write( buf, 5+msg->GetLength())<=0) {
+				m_485->Close();
+			}
+	
+			if (Read485(true)) break;
+			retries--;
+			if (retries == 0) {
+				Log::Write(LogLevel_Info,"No response, drop");
+				break;
+			} else {
+				Log::Write(LogLevel_Info,"No response");
+			}
+		}
+
+	}
+	delete msg;
+	Log::Write(LogLevel_Info,"leave send");
+	m_sendMutex->Unlock();
+#endif
+}
 //-----------------------------------------------------------------------------
 // <Driver::WriteMsg>
 // Transmit the current message to the Z-Wave controller
@@ -1122,24 +1282,6 @@ bool Driver::WriteMsg
 	Node* node = GetNode( nodeId );
 	if( attempts >= m_currentMsg->GetMaxSendAttempts() || (node != NULL && !node->IsNodeAlive() && !m_currentMsg->IsNoOperation()) )
 	{
-#ifdef SUPPORT_485_REPEATER		
-		// Send command via 485 here. We will send the 485 command via the 485 command sequence
-		// C0 ID LL 46 PP PP PP PP PP PP C1
-		//    PP = m_currentMsg->GetBuffer[]
-		//    LL = m_currentMsg->GetLength()+4
-		//    ID = ZWave Node ID
-		// Each device must check if the ID match itse ZWave ID. If yes, it will parse the command and execute the 
-		// Appropriate command handler for it.
-		uint8 buf[64];
-
-		buf[0] = 0xC0;
-		buf[1] = nodeId;
-		buf[2] = m_currentMsg->GetLength()+4;
-		buf[3] = 0x46;
-		memcpy(buf+4,m_currentMsg->GetBuffer(), m_currentMsg->GetLength());
-		buf[3+m_currentMsg->GetBuffer()] = 0xC1;
-		m_485->Write( buf, 5+m_currentMsg->GetBuffer());
-#endif
 
 		if( node != NULL && !node->IsNodeAlive() )
 		{
@@ -3438,7 +3580,7 @@ void Driver::HandleApplicationCommandHandlerRequest
 		else
 		{
 			node->m_receivedUnsolicited++;
-			node->SetQueryStage( Node::QueryStage_Dynamic );
+			//node->SetQueryStage( Node::QueryStage_Dynamic );
 			webdebug_add(TYPE_ZWAVE, ZWAVE_DEBUG, 1,0,0,0);
 			Log::Write(LogLevel_Info, nodeId, "Unsolicited response");
 
@@ -3882,10 +4024,13 @@ bool Driver::EnablePoll
 )
 {
 	// make sure the polling thread doesn't lock the node while we're in this function
-	m_pollMutex->Lock();
-
 	// confirm that this node exists
 	uint8 nodeId = _valueId.GetNodeId();
+	if (nodeId == m_nodeId) {
+		return false;
+	}
+	m_pollMutex->Lock();
+
 	Node* node = GetNode( nodeId );
 	if( node != NULL )
 	{
@@ -4479,10 +4624,14 @@ uint8 Driver::GetNodeBasic
 )
 {
 	uint8 basic = 0;
+	Log::Write(LogLevel_Info,"Before GetNode");
 	if( Node* node = GetNode( _nodeId ) )
 	{
+		Log::Write(LogLevel_Info,"After GetNode");
 		basic = node->GetBasic();
+		Log::Write(LogLevel_Info,"After GetBasic");
 		ReleaseNodes();
+		Log::Write(LogLevel_Info,"After ReleaseNodes");
 	}
 
 	return basic;
@@ -5017,7 +5166,7 @@ void Driver::DoControllerCommand
 		{
 			Log::Write( LogLevel_Info, 0, "Receive Configuration" );
 			Msg* msg = new Msg( "ReceiveConfiguration", 0xff, REQUEST, FUNC_ID_ZW_SET_LEARN_MODE, true );
-			msg->Append( 0xff );
+			msg->Append( 0x01 );
 			SendMsg( msg, MsgQueue_Command );
 			break;
 		}
