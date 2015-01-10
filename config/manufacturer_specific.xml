@@ -200,6 +200,7 @@
 	</Manufacturer>
 	<Manufacturer id="0162" name="Homescenario">
 	        <Product type="0002" id="0bb8" name="HSW112 Dual switch module"  config="homescenario/hsw112.xml" />
+	        <Product type="0003" id="0bb8" name="HSW120ZL Dual switch module"  config="homescenario/hsw120zl.xml" />
 	        <Product type="0000" id="0200" name="HSK-200Z AV blaster"  config="homescenario/hsk200z.xml" />
 	        <Product type="0000" id="0320" name="HSK-320Z IO bridge"  config="homescenario/hsk320.xml" />
         </Manufacturer>
