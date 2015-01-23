@@ -1105,22 +1105,24 @@ bool Driver::Read485(bool wait)
 	m_485->SetSignalThreshold( 1 );
 	if (wait) {
 		while(1) {
-			int32 response = Wait::Single( m_485, 100 );
+			int32 response = Wait::Single( m_485, 400 );
 			if (response < 0) {
-				Log::Write(LogLevel_Info,"read timeout 100ms");
+				Log::Write(LogLevel_Info,"read timeout 400ms");
 				return false;
 			}
 			if( !m_485->Read( buffer, 1 ) )
 			{
 				// Nothing to read
+				Log::Write(LogLevel_Info,"Nothing to read");
 				return false;
 			}
 			if (buffer[0] != 0xc0) {
 				Log::Write(LogLevel_Info,"Garbage byte %02x", buffer[0]);
 				retries--;
 				if (retries==0) return false;
-			} 
-			break;
+			} else {
+				break;
+			}
 		}
 	} else {
 		if( !m_485->Read( buffer, 1 ) )
