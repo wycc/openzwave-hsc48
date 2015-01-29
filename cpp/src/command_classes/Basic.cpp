@@ -205,6 +205,11 @@ bool Basic::HandleMsg
 			value->OnValueRefreshed( _data[1] );
 			value->Release();
 		}
+		else if( ValueByte* value = static_cast<ValueByte*>( GetValue( 1, 0 ) ) )
+		{
+			value->OnValueRefreshed( _data[1] );
+			value->Release();
+		}
 		return true;
 	}
 
