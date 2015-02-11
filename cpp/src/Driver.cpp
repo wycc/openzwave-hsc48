@@ -224,6 +224,8 @@ Driver::Driver
 	if( !m_485->Open( "/dev/tty485" ) )
 	{
 		Log::Write( LogLevel_Warning, "WARNING: Failed to init the 485 controller");
+		delete m_485;
+		m_485 = NULL;
 	}
 #endif
 }
@@ -266,8 +268,10 @@ Driver::~Driver
 	m_controller->Close();
 	m_controller->Release();
 #ifdef SUPPORT_485_REPEATER		
-	m_485->Close();
-	m_485->Release();
+	if (m_485) {
+		m_485->Close();
+		m_485->Release();
+	}
 #endif
 
 	if( m_currentMsg != NULL )
@@ -359,6 +363,7 @@ void Driver::DriverThreadProc
 )
 {
 	uint32 attempts = 0;
+	
 	while( true )
 	{
 		if( Init( attempts ) )
@@ -375,7 +380,9 @@ void Driver::DriverThreadProc
 			waitObjects[7] = m_queueEvent[MsgQueue_Send];		// Ordinary requests to be sent.
 			waitObjects[8] = m_queueEvent[MsgQueue_Query];		// Node queries are pending.
 			waitObjects[9] = m_queueEvent[MsgQueue_Poll];		// Poll request is waiting.
-			waitObjects[10] = m_485;					// 485 controller
+			if (m_485) {
+				waitObjects[10] = m_485;					// 485 controller
+			}
 
 			TimeStamp retryTimeStamp;
 
@@ -384,9 +391,12 @@ void Driver::DriverThreadProc
 				Log::Write( LogLevel_StreamDetail, "      Top of DriverThreadProc loop." );
 				uint32 count = 11;
 				int32 timeout = Wait::Timeout_Infinite;
+				if (m_485 == NULL) count=10;
 
 				// If we're waiting for a message to complete, we can only
 				// handle incoming data, notifications and exit events.
+				if (m_485==NULL) {
+				}
 				if( m_waitingForAck || m_expectedCallbackId || m_expectedReply )
 				{
 					count = 3;
@@ -1101,13 +1111,13 @@ bool Driver::Read485(bool wait)
 	uint8 zwavebuf[32];
 	unsigned char ID;
 	int retries=100;
-
+	if (m_485==NULL) return false;
 	m_485->SetSignalThreshold( 1 );
 	if (wait) {
 		while(1) {
-			int32 response = Wait::Single( m_485, 400 );
+			int32 response = Wait::Single( m_485, 100 );
 			if (response < 0) {
-				Log::Write(LogLevel_Info,"read timeout 400ms");
+				Log::Write(LogLevel_Info,"read timeout 100ms");
 				return false;
 			}
 			if( !m_485->Read( buffer, 1 ) )
