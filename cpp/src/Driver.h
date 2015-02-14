@@ -357,6 +357,8 @@ namespace OpenZWave
 	private:
 		int32 GetPollInterval(){ return m_pollInterval ; }
 		void SetPollInterval( int32 _milliseconds, bool _bIntervalBetweenPolls ){ m_pollInterval = _milliseconds; m_bIntervalBetweenPolls = _bIntervalBetweenPolls; }
+		void Set485Param( int32 _timeout, int32 _retry ){ m_485_timeout = _timeout; m_485_retry = _retry; }
+		void Get485Param( int32 *_timeout, int32 *_retry ){ *_timeout = m_485_timeout; *_retry = m_485_retry; }
 		bool EnablePoll( ValueID _valueId, uint8 _intensity = 1 );
 		bool DisablePoll( ValueID _valueId );
 		bool isPolled( ValueID _valueId );
@@ -373,6 +375,8 @@ namespace OpenZWave
 		list<PollEntry>			m_pollList;									// List of nodes that need to be polled
 		Mutex*					m_pollMutex;								// Serialize access to the polling list
 		int32					m_pollInterval;								// Time interval during which all nodes must be polled
+		int32					m_485_timeout;								// 
+		int32					m_485_retry;								// 
 		bool					m_bIntervalBetweenPolls;					// if true, the library intersperses m_pollInterval between polls; if false, the library attempts to complete all polls within m_pollInterval
 
 	//-----------------------------------------------------------------------------
@@ -630,6 +634,7 @@ namespace OpenZWave
 		bool WriteNextMsg( MsgQueue const _queue );							// Extracts the first message from the queue, and makes it the current one.
 		bool WriteMsg( string const str);									// Sends the current message to the Z-Wave network
 		void Send485(int nodeId,Msg *msg,MsgQueue const _queue);
+		void Write485(int nodeId,Msg *msg,MsgQueue const _queue);
 		void RemoveCurrentMsg();											// Deletes the current message and cleans up the callback etc states
 		bool MoveMessagesToWakeUpQueue(	uint8 const _targetNodeId, bool const _move );		// If a node does not respond, and is of a type that can sleep, this method is used to move all its pending messages to another queue ready for when it mext wakes up.
 		bool HandleErrorResponse( uint8 const _error, uint8 const _nodeId, char const* _funcStr, bool _sleepCheck = false );									    // Handle data errors and process consistently. If message is moved to wake-up queue, return true.
@@ -711,6 +716,7 @@ namespace OpenZWave
 			Node::QueryStage		m_queryStage;
 			bool				m_retry;
 			ControllerCommandItem*		m_cci;
+			bool				m_485;
 		};
 
 		list<MsgQueueItem>			m_msgQueue[MsgQueue_Count];

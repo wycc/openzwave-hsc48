@@ -221,6 +221,8 @@ Driver::Driver
 	m_485 = new SerialController();
 	m_485->SetBaud(9600);
 	m_485->SetSignalThreshold( 1 );
+	m_485_timeout = 80;
+	m_485_retry = 15;
 	if( !m_485->Open( "/dev/tty485" ) )
 	{
 		Log::Write( LogLevel_Warning, "WARNING: Failed to init the 485 controller");
@@ -699,6 +701,14 @@ bool Driver::ReadConfig
 	{
 		m_bIntervalBetweenPolls = !strcmp( str, "true" );
 	}
+	if( TIXML_SUCCESS == driverElement->QueryIntAttribute( "timeout_485", &intVal ) )
+	{
+		m_485_timeout = intVal;
+	}
+	if( TIXML_SUCCESS == driverElement->QueryIntAttribute( "retry_485", &intVal ) )
+	{
+		m_485_retry = intVal;
+	}
 
 	// Read the nodes
 	LockNodes();
@@ -788,6 +798,11 @@ void Driver::WriteConfig
 
 	snprintf( str, sizeof(str), "%d", m_pollInterval );
 	driverElement->SetAttribute( "poll_interval", str );
+
+	snprintf( str, sizeof(str), "%d", m_485_timeout );
+	driverElement->SetAttribute( "timeout_485", str );
+	snprintf( str, sizeof(str), "%d", m_485_retry );
+	driverElement->SetAttribute( "retry_485", str );
 
 	snprintf( str, sizeof(str), "%d", (int) m_bIntervalBetweenPolls );
 	driverElement->SetAttribute( "poll_interval_between", str );
@@ -1008,6 +1023,19 @@ bool Driver::WriteNextMsg
 		}
 	}
 #endif	
+	if (item.m_msg && item.m_msg->m_485) {
+		m_currentMsg = item.m_msg;
+		m_currentMsgQueueSource = _queue;
+		m_msgQueue[_queue].pop_front();
+		if( m_msgQueue[_queue].empty() )
+		{
+			m_queueEvent[_queue]->Reset();
+		}
+		m_sendMutex->Unlock();
+		Write485(item.m_nodeId, item.m_msg, _queue);
+		Log::Write(LogLevel_Info,"end of 485");
+		return false;
+	}
 	if( MsgQueueCmd_SendMsg == item.m_command )
 	{
 		// Send a message
@@ -1115,9 +1143,9 @@ bool Driver::Read485(bool wait)
 	m_485->SetSignalThreshold( 1 );
 	if (wait) {
 		while(1) {
-			int32 response = Wait::Single( m_485, 100 );
+			int32 response = Wait::Single( m_485, m_485_timeout );
 			if (response < 0) {
-				Log::Write(LogLevel_Info,"read timeout 100ms");
+				Log::Write(LogLevel_Info,"read timeout %d ms",m_485_timeout);
 				return false;
 			}
 			if( !m_485->Read( buffer, 1 ) )
@@ -1138,6 +1166,7 @@ bool Driver::Read485(bool wait)
 		if( !m_485->Read( buffer, 1 ) )
 		{
 			// Nothing to read
+			Log::Write(LogLevel_Info,"Nothong to read");
 			return false;
 		}
 		if (buffer[0] != 0xc0) {
@@ -1215,6 +1244,7 @@ void Driver::Process485(uint8 *s,int len)
 			pCommandClass->HandleMsg( payload+1, len-1, instance );
 		else
 			Log::Write(LogLevel_Info,"Command class %d is not available", payload[0]);
+		Log::Write(LogLevel_Info,"message is done");
 	} else {
 		Log::Write(LogLevel_Info,"Node %d is not avauilable" , nodeId);
 	}
@@ -1225,8 +1255,12 @@ void Driver::Process485(uint8 *s,int len)
 //-----------------------------------------------------------------------------
 void Driver::Send485(int nodeId,Msg *msg, MsgQueue const _queue)
 {
-	m_sendMutex->Lock();
-	Log::Write(LogLevel_Info,"enter send");
+	msg->m_485 = true;
+	SendMsg(msg,_queue);
+}
+void Driver::Write485(int nodeId,Msg *msg, MsgQueue const _queue)
+{
+	Log::Write( LogLevel_Info, nodeId, "Sending 485 message - %s", m_currentMsg->GetAsString().c_str() );
 #ifdef SUPPORT_485_REPEATER		
 	// Send command via 485 here. We will send the 485 command via the 485 command sequence
 	// C0 ID LL 46 PP PP PP PP PP PP C1
@@ -1238,7 +1272,7 @@ void Driver::Send485(int nodeId,Msg *msg, MsgQueue const _queue)
 	msg->Finalize();
 	if (m_485) {
 		uint8 buf[64];
-		int retries=3;
+		int retries=m_485_retry;
 
 		buf[0] = 0xC0;
 		buf[1] = nodeId;
@@ -1252,7 +1286,10 @@ void Driver::Send485(int nodeId,Msg *msg, MsgQueue const _queue)
 				m_485->Close();
 			}
 	
-			if (Read485(true)) break;
+			if (Read485(true)) {
+				Log::Write(LogLevel_Info,"485 done");
+				break;
+			}
 			retries--;
 			if (retries == 0) {
 				Log::Write(LogLevel_Info,"No response, drop");
@@ -1263,10 +1300,10 @@ void Driver::Send485(int nodeId,Msg *msg, MsgQueue const _queue)
 		}
 
 	}
-	delete msg;
-	Log::Write(LogLevel_Info,"leave send");
-	m_sendMutex->Unlock();
 #endif
+	Log::Write(LogLevel_Info,"before delete");
+	RemoveCurrentMsg();
+	Log::Write(LogLevel_Info,"leave send");
 }
 //-----------------------------------------------------------------------------
 // <Driver::WriteMsg>

@@ -132,6 +132,7 @@ namespace OpenZWave
 
 			return false;
 		}
+		bool			m_485;
 
 	private:
 		void MultiEncap();					// Encapsulate the data inside a MultiInstance/Multicommand message
