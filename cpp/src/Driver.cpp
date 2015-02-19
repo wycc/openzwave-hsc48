@@ -1245,6 +1245,7 @@ void Driver::Process485(uint8 *s,int len)
 		else
 			Log::Write(LogLevel_Info,"Command class %d is not available", payload[0]);
 		Log::Write(LogLevel_Info,"message is done");
+		m_485_drop = 0;
 	} else {
 		Log::Write(LogLevel_Info,"Node %d is not avauilable" , nodeId);
 	}
@@ -1284,6 +1285,9 @@ void Driver::Write485(int nodeId,Msg *msg, MsgQueue const _queue)
 			Log::Write(LogLevel_Info,"485 Send %d bytes", 5+msg->GetLength());
 			if (m_485->Write( buf, 5+msg->GetLength())<=0) {
 				m_485->Close();
+				m_485->Release();
+				m_485 = NULL;
+				break;
 			}
 	
 			if (Read485(true)) {
@@ -1293,6 +1297,13 @@ void Driver::Write485(int nodeId,Msg *msg, MsgQueue const _queue)
 			retries--;
 			if (retries == 0) {
 				Log::Write(LogLevel_Info,"No response, drop");
+				m_485_drop++;
+				if (m_485_drop >= 10) {
+					m_485->Close();
+					m_485->Release();
+					delete m_485;
+					m_485 = NULL;
+				}
 				break;
 			} else {
 				Log::Write(LogLevel_Info,"No response");

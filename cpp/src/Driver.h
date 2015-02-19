@@ -377,6 +377,7 @@ namespace OpenZWave
 		int32					m_pollInterval;								// Time interval during which all nodes must be polled
 		int32					m_485_timeout;								// 
 		int32					m_485_retry;								// 
+		int32					m_485_drop;
 		bool					m_bIntervalBetweenPolls;					// if true, the library intersperses m_pollInterval between polls; if false, the library attempts to complete all polls within m_pollInterval
 
 	//-----------------------------------------------------------------------------
