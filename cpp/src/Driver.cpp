@@ -221,8 +221,8 @@ Driver::Driver
 	m_485 = new SerialController();
 	m_485->SetBaud(9600);
 	m_485->SetSignalThreshold( 1 );
-	m_485_timeout = 80;
-	m_485_retry = 15;
+	m_485_timeout = 200;
+	m_485_retry = 5;
 	if( !m_485->Open( "/dev/tty485" ) )
 	{
 		Log::Write( LogLevel_Warning, "WARNING: Failed to init the 485 controller");
