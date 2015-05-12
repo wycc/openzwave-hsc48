@@ -271,8 +271,8 @@ Driver::~Driver
 	m_controller->Release();
 #ifdef SUPPORT_485_REPEATER		
 	if (m_485) {
-		m_485->Close();
-		m_485->Release();
+		//m_485->Close();
+		//m_485->Release();
 	}
 #endif
 
@@ -1284,9 +1284,9 @@ void Driver::Write485(int nodeId,Msg *msg, MsgQueue const _queue)
 		while(1) {
 			Log::Write(LogLevel_Info,"485 Send %d bytes", 5+msg->GetLength());
 			if (m_485->Write( buf, 5+msg->GetLength())<=0) {
-				m_485->Close();
-				m_485->Release();
-				m_485 = NULL;
+				//m_485->Close();
+				//m_485->Release();
+				//m_485 = NULL;
 				break;
 			}
 	
@@ -1299,10 +1299,11 @@ void Driver::Write485(int nodeId,Msg *msg, MsgQueue const _queue)
 				Log::Write(LogLevel_Info,"No response, drop");
 				m_485_drop++;
 				if (m_485_drop >= 10) {
-					m_485->Close();
-					m_485->Release();
-					delete m_485;
-					m_485 = NULL;
+					Log::Write(LogLevel_Info,"Too many fail. Stop 485");
+					//m_485->Close();
+					//m_485->Release();
+					//delete m_485;
+					//m_485 = NULL;
 				}
 				break;
 			} else {
