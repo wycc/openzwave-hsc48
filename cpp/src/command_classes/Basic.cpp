@@ -195,7 +195,7 @@ bool Basic::HandleMsg
 	if( BasicCmd_Report == (BasicCmd)_data[0] )
 	{
 		// Level
-		Log::Write( LogLevel_Info, GetNodeId(), "Received Basic report from node %d: level=%d", GetNodeId(), _data[1] );
+		Log::Write( LogLevel_Info, GetNodeId(), "Received Basic report from node %d: level=%d instance=%d", GetNodeId(), _data[1],_instance );
 		if( !m_ignoreMapping && m_mapping != 0 )
 		{
 			UpdateMappedClass( _instance, m_mapping, _data[1] );
@@ -217,7 +217,7 @@ bool Basic::HandleMsg
 	{
 		if( m_setAsReport )
 		{
-			Log::Write( LogLevel_Info, GetNodeId(), "Received Basic set from node %d: level=%d. Treating it as a Basic report.", GetNodeId(), _data[1] );
+			Log::Write( LogLevel_Info, GetNodeId(), "Received Basic set from node %d: level=%d. Treating it as a Basic report. instance=%d", GetNodeId(), _data[1], _instance );
 			if( !m_ignoreMapping && m_mapping != 0 )
 			{
 				UpdateMappedClass( _instance, m_mapping, _data[1] );
@@ -225,6 +225,12 @@ bool Basic::HandleMsg
 			else if( ValueByte* value = static_cast<ValueByte*>( GetValue( _instance, 0 ) ) )
 			{
 				value->OnValueRefreshed( _data[1] );
+				value->Release();
+			}
+			else if (ValueByte* value = static_cast<ValueByte*>( GetValue( 1, 0 ) ))
+			{
+				if (_data[1] <16)
+					value->OnValueRefreshed( _data[1]+100 );
 				value->Release();
 			}
 		}
