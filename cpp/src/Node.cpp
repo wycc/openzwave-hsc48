@@ -269,12 +269,17 @@ void Node::AdvanceQueries
 				// and alive. Based on the response or lack of response
 				// will determine next step.
 				//
-				NoOperation* noop = static_cast<NoOperation*>( GetCommandClass( NoOperation::StaticGetCommandClassId() ) );
+				//NoOperation* noop = static_cast<NoOperation*>( GetCommandClass( NoOperation::StaticGetCommandClassId() ) );
 				if( GetDriver()->GetNodeId() != m_nodeId )
 				{
-					noop->Set( true );
-				      	m_queryPending = true;
-					addQSC = true;
+					// Do not use NOOP now. We need to check if this device is 485 device and skip
+					// only when it is a 485 device.
+
+					//noop->Set( true );
+				      	//m_queryPending = true;
+					//addQSC = true;
+					m_queryStage = QueryStage_WakeUp;
+					m_queryRetries = 0;
 				}
 				else
 				{
@@ -474,12 +479,16 @@ void Node::AdvanceQueries
 				// and alive. Based on the response or lack of response
 				// will determine next step. Called here when configuration exists.
 				//
-				NoOperation* noop = static_cast<NoOperation*>( GetCommandClass( NoOperation::StaticGetCommandClassId() ) );
+				//NoOperation* noop = static_cast<NoOperation*>( GetCommandClass( NoOperation::StaticGetCommandClassId() ) );
 				if( GetDriver()->GetNodeId() != m_nodeId )
 				{
-					noop->Set( true );
-				      	m_queryPending = true;
-					addQSC = true;
+					// Do not do this step now for 485 device....
+
+					//noop->Set( true );
+				      	//m_queryPending = true;
+					//addQSC = true;
+					m_queryStage = QueryStage_Associations;
+					m_queryRetries = 0;
 				}
 				else
 				{
@@ -681,6 +690,7 @@ void Node::SetQueryStage
 	bool const _advance	// = true
 )
 {
+	Log::Write(LogLevel_Info, "go to stage %d",_stage);
 	if( (int)_stage < (int)m_queryStage )
 	{
 		m_queryStage = _stage;
@@ -773,7 +783,9 @@ void Node::ReadXML
 	if( str )
 	{
 		// After restoring state from a file, we need to at least refresh the association, session and dynamic values.
-		QueryStage queryStage = QueryStage_Associations;
+		// change to complete stage so that we can save some time initially
+		//QueryStage queryStage = QueryStage_Associations;
+		QueryStage queryStage = QueryStage_Complete;
 		for( uint32 i=0; i<(uint32)QueryStage_Associations; ++i )
 		{
 			if( !strcmp( str, c_queryStageNames[i] ) )
@@ -1039,6 +1051,10 @@ void Node::ReadCommandClassesXML
 				}
 
 				CommandClass* cc = GetCommandClass( id );
+
+				// workaround for Leedgood demo room for HSW120ZL. We should skip probe for 485 devices.
+
+				if (id == 37 || id == 115) remove = 1;
 				if( remove )
 				{
 					// Remove support for the command class

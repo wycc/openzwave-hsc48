@@ -2735,7 +2735,12 @@ void Driver::HandleSerialAPIGetInitDataResponse
 							{
 								// The node was read in from the config, so we
 								// only need to get its current state
-								node->SetQueryStage( Node::QueryStage_Probe1 );
+								//node->SetQueryStage( Node::QueryStage_Probe1 );
+
+								// if the node has been queried before, we assume that it is alive.
+								// We skip the NOOP check for the 485 devices. In the future, we
+								// should modify this for 485 device only.
+								node->SetQueryStage( Node::QueryStage_Complete);
 							}
 
 							ReleaseNodes();
