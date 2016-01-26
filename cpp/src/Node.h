@@ -315,6 +315,7 @@ namespace OpenZWave
 		uint8		m_numRouteNodes;	// number of node routes
 		uint8		m_routeNodes[5];	// nodes to route to
 		map<uint8,uint8>	m_buttonMap;	// Map button IDs into virtual node numbers
+		uint8		m_is485;
 
 	//-----------------------------------------------------------------------------
 	// Device Naming

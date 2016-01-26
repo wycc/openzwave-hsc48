@@ -12,4 +12,5 @@
   <CommandClass id="39" action="remove" />
   <CommandClass id="38" action="remove" />
   <CommandClass id="32" has485="true" />
+  <CommandClass id="37" has485="true" />
 </Product>

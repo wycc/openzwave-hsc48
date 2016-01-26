@@ -910,6 +910,12 @@ void Node::ReadXML
 	{
 		m_nodeInfoSupported = !strcmp( str, "true" );
 	}
+	m_is485 = false;
+	str = _node->Attribute( "is485" );
+	if( str )
+	{
+		m_is485 = !strcmp( str, "true" );
+	}
 
 	// Read the manufacturer info and create the command classes
 	TiXmlElement const* child = _node->FirstChildElement();
@@ -1054,7 +1060,7 @@ void Node::ReadCommandClassesXML
 
 				// workaround for Leedgood demo room for HSW120ZL. We should skip probe for 485 devices.
 
-				if (id == 37 || id == 115) remove = 1;
+				//if (id == 37 || id == 115) remove = 1;
 				if( remove )
 				{
 					// Remove support for the command class
