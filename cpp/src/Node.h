@@ -296,6 +296,8 @@ namespace OpenZWave
 		string const& GetType()const{ return m_type; }	
 		uint32 GetNeighbors( uint8** o_associations );
 		bool IsController()const{ return ( m_basic == 0x01 || m_basic == 0x02 ) && ( m_generic == 0x01 || m_generic == 0x02 ); }
+		void Set485(bool b) { m_is485 = b;}
+		bool Is485() const {return m_is485;}
 
 	private:
 		bool		m_listening;

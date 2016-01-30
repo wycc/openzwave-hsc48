@@ -1059,8 +1059,9 @@ void Node::ReadCommandClassesXML
 				CommandClass* cc = GetCommandClass( id );
 
 				// workaround for Leedgood demo room for HSW120ZL. We should skip probe for 485 devices.
-
-				//if (id == 37 || id == 115) remove = 1;
+				if (Is485()) {
+					if (id == 37 || id == 115) remove = 1;
+				}
 				if( remove )
 				{
 					// Remove support for the command class

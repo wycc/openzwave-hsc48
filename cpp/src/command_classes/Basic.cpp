@@ -85,6 +85,7 @@ void Basic::ReadXML
 	if( str )
 	{
 		m_has485 = !strcmp( str, "true");
+		GetNodeUnsafe()->Set485(m_has485);
 	}
 
 	int32 intVal;
