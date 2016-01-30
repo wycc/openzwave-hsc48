@@ -2677,6 +2677,16 @@ void Driver::HandleMemoryGetIdResponse
 	m_homeId = ( ( (uint32)_data[2] )<<24 ) | ( ( (uint32)_data[3] )<<16 ) | ( ( (uint32)_data[4] )<<8 ) | ( (uint32)_data[5] );
 	m_nodeId = _data[6];
 	m_controllerReplication = static_cast<ControllerReplication*>(ControllerReplication::Create( m_homeId, m_nodeId ));
+	int32 i;
+
+	for(i=0;i<256;i++)
+		if (m_nodes[i]) break;
+	if (i == 256) {
+		Log::Write( LogLevel_Info, "No node is available." );
+		Notification* notification = new Notification( Notification::Type_AllNodesQueried );
+		notification->SetHomeAndNodeIds( m_homeId, 0xff );
+		QueueNotification( notification );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2735,12 +2745,12 @@ void Driver::HandleSerialAPIGetInitDataResponse
 							{
 								// The node was read in from the config, so we
 								// only need to get its current state
-								node->SetQueryStage( Node::QueryStage_Probe1 );
+								//node->SetQueryStage( Node::QueryStage_Probe1 );
 
 								// if the node has been queried before, we assume that it is alive.
 								// We skip the NOOP check for the 485 devices. In the future, we
 								// should modify this for 485 device only.
-								//node->SetQueryStage( Node::QueryStage_Complete);
+								node->SetQueryStage( Node::QueryStage_Complete);
 							}
 
 							ReleaseNodes();
