@@ -1351,19 +1351,19 @@ bool Driver::WriteMsg
 
 			gettimeofday(&now, NULL);
 			if (now.tv_sec > node->m_lastCheckTime+20) {
-				m_controller->Write( m_currentMsg->GetBuffer(), m_currentMsg->GetLength() );
 				node->m_lastCheckTime = now.tv_sec;
+				m_controller->Write( m_currentMsg->GetBuffer(), m_currentMsg->GetLength() );
 				webdebug_add(TYPE_ZWAVE,ZWAVE_SEND_NOWAIT, nodeId, attempts, node->IsNodeAlive(),0);
 			} else {
 				webdebug_add(TYPE_ZWAVE,ZWAVE_DROP, nodeId, 0,0,0);
+				RemoveCurrentMsg();
+				m_dropped++;
+				if( node != NULL )
+				{
+					ReleaseNodes();
+				}
+				return false;
 			}
-			RemoveCurrentMsg();
-			m_dropped++;
-			if( node != NULL )
-			{
-		    		ReleaseNodes();
-			}
-			return false;
 		}
 		else
 		{
@@ -3145,6 +3145,14 @@ void Driver::HandleSendDataRequest
 		}
 		// Command reception acknowledged by node, error or not
 		m_expectedCallbackId = 0;
+
+		// If a node is not alive, we do not wait for the reply.
+		if (node != NULL) {
+			if (! node->IsNodeAlive()) {
+				m_expectedReply = 0;
+				RemoveCurrentMsg();
+			}
+		}
 	}
 }
 
@@ -4355,7 +4363,6 @@ void Driver::PollThreadProc
 			PollEntry pe = m_pollList.front();
 			m_pollList.pop_front();
 			ValueID  valueId = pe.m_id;
-
 			// only execute this poll if pe.m_pollCounter == 1; otherwise decrement the counter and process the next polled value
 			if( pe.m_pollCounter != 1)
 			{
