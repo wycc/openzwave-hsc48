@@ -2476,7 +2476,7 @@ bool Node::SetDeviceClasses
 	}
 
 	// Apply any Generic device class data
-	uint8 basicMapping = 0;
+	//uint8 basicMapping = 0;
 	map<uint8,GenericDeviceClass*>::iterator git = s_genericDeviceClasses.find( _generic );
 	if( git != s_genericDeviceClasses.end() )
 	{
@@ -2489,7 +2489,7 @@ bool Node::SetDeviceClasses
 		AddMandatoryCommandClasses( genericDeviceClass->GetMandatoryCommandClasses() );
 
 		// Get the command class that COMMAND_CLASS_BASIC maps to.
-		basicMapping = genericDeviceClass->GetBasicMapping();
+		//basicMapping = genericDeviceClass->GetBasicMapping();
 
 		// Apply any Specific device class data
 		if( DeviceClass* specificDeviceClass = genericDeviceClass->GetSpecificDeviceClass( _specific ) )
@@ -2504,7 +2504,7 @@ bool Node::SetDeviceClasses
 			if( specificDeviceClass->GetBasicMapping() )
 			{
 				// Override the generic device class basic mapping with the specific device class one.
-				basicMapping = specificDeviceClass->GetBasicMapping();
+				//basicMapping = specificDeviceClass->GetBasicMapping();
 			}
 		}
 		else

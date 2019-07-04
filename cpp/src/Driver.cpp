@@ -1137,7 +1137,6 @@ bool Driver::Read485(bool wait)
 {
 	uint8 buffer[32];
 	uint8 zwavebuf[32];
-	unsigned char ID;
 	int retries=100;
 	if (m_485==NULL) return false;
 	m_485->SetSignalThreshold( 1 );
@@ -1186,7 +1185,8 @@ bool Driver::Read485(bool wait)
 	}
 
 	m_485->Read( &buffer[1], 3 );
-	ID = buffer[1];
+//	unsigned char ID;
+//	ID = buffer[1];
 	if (buffer[3] != 0x66) {
 		return false;
 	}
