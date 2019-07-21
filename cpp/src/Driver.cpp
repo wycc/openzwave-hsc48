@@ -3667,6 +3667,13 @@ void Driver::HandleApplicationCommandHandlerRequest
 			//node->SetQueryStage( Node::QueryStage_Dynamic );
 			webdebug_add(TYPE_ZWAVE, ZWAVE_DEBUG, 1,0,0,0);
 			Log::Write(LogLevel_Info, nodeId, "Unsolicited response");
+			// We do not handle the unsolicited response directly since it does not work for multi channel device.
+			// Instead, we will trigger a state requests for such device.
+			if (!node->IsNodeAlive() ) {
+				node->SetNodeAlive( true );
+			}
+			node->RequestDynamicValues();
+			return;
 
 		}
 		if ( !node->IsNodeAlive() )
@@ -4152,8 +4159,8 @@ bool Driver::EnablePoll
 			Notification* notification = new Notification( Notification::Type_PollingEnabled );
 			notification->SetHomeAndNodeIds( m_homeId, _valueId.GetNodeId() );
 			QueueNotification( notification );
-			Log::Write( LogLevel_Info, nodeId, "EnablePoll for HomeID 0x%.8x, value(cc=0x%02x,in=0x%02x,id=0x%02x)--poll list has %d items",
-				    _valueId.GetHomeId(), _valueId.GetCommandClassId(), _valueId.GetIndex(), _valueId.GetInstance(), m_pollList.size() );
+			Log::Write( LogLevel_Info, nodeId, "EnablePoll for HomeID 0x%.8x, value(cc=0x%02x,in=0x%02x,id=0x%02x,intensity=%d)--poll list has %d items",
+				    _valueId.GetHomeId(), _valueId.GetCommandClassId(), _valueId.GetIndex(), _valueId.GetInstance(), pe.m_pollCounter, m_pollList.size() );
 			return true;
 		}
 

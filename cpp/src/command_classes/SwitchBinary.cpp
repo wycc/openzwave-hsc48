@@ -100,12 +100,22 @@ bool SwitchBinary::HandleMsg
 {
 	if (SwitchBinaryCmd_Report == (SwitchBinaryCmd)_data[0])
 	{
-		Log::Write( LogLevel_Info, GetNodeId(), "Received SwitchBinary report from node %d: level=%s", GetNodeId(), _data[1] ? "On" : "Off" );
+		Log::Write( LogLevel_Info, GetNodeId(), "Received SwitchBinary report from node %d: level=%s instance =%d", GetNodeId(), _data[1] ? "On" : "Off", _instance );
+		Value *value1 = GetValue(_instance,0);
+
+		if (value1) {
+			 Log::Write( LogLevel_Info, GetNodeId(), "value type is %d", value1->GetID().GetType());
+		} else {
+			Log::Write( LogLevel_Info, GetNodeId(), "Value is not available");
+			//CreateVars(_instance);
+		}
 
 		if( ValueBool* value = static_cast<ValueBool*>( GetValue( _instance, 0 ) ) )
 		{
+			Log::Write( LogLevel_Info, GetNodeId(), "Updte value %d\n",_data[1]);
 			value->OnValueRefreshed( _data[1] != 0 );
 			value->Release();
+
 		}
 		return true;
 	}
