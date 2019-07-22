@@ -107,7 +107,7 @@ bool SwitchBinary::HandleMsg
 			 Log::Write( LogLevel_Info, GetNodeId(), "value type is %d", value1->GetID().GetType());
 		} else {
 			Log::Write( LogLevel_Info, GetNodeId(), "Value is not available");
-			//CreateVars(_instance);
+			CreateVars(_instance);
 		}
 
 		if( ValueBool* value = static_cast<ValueBool*>( GetValue( _instance, 0 ) ) )
